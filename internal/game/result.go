@@ -11,6 +11,10 @@ import (
 
 func ShowResult(sentences []Sentence, totalTime time.Duration, onExit func()) {
 	display.ClearTerminal()
+
+	display.HideCursor()
+	defer display.ShowCursor()
+
 	displaySentences(sentences)
 	displaySummary(len(sentences), totalTime)
 
@@ -20,17 +24,24 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, onExit func()) {
 func displaySentences(sentences []Sentence) {
 	cyan := color.New(color.FgCyan).SprintFunc()
 
+	fmt.Print("\033[K")
 	fmt.Println("All Sentences:")
+
 	for _, sentence := range sentences {
-		fmt.Printf("  %s\n", cyan(sentence.Text))
+		fmt.Print("\r\033[K")
+		fmt.Printf("%s\n", cyan(sentence.Text))
 	}
-	fmt.Println()
+
+	fmt.Print("\033[1B")
 }
 
 func displaySummary(sentenceCount int, totalTime time.Duration) {
+	fmt.Print("\r\033[K")
 	fmt.Printf("Number of sentences: %d\n", sentenceCount)
+	fmt.Print("\r")
 	fmt.Printf("Total time: %02d.%03d seconds\n", int(totalTime.Seconds()), int(totalTime.Milliseconds()%1000))
-	fmt.Println()
+
+	fmt.Print("\r\033[K")
 	fmt.Println("Press ESC to return to the menu...")
 }
 
