@@ -14,6 +14,9 @@ import (
 )
 
 func Start(onExit func()) {
+	display.HideCursor()
+	defer display.ShowCursor()
+
 	oldState := initializeTerminal()
 	defer display.RestoreTerminal(oldState)
 
