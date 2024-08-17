@@ -21,7 +21,7 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onE
 		lineNumber++
 		textLine := display.NewTerminalLine(lineNumber)
 		cyan := color.New(color.FgCyan).SprintFunc()
-		textLine.SetText(cyan(fmt.Sprintf("%s %s %s", sentence.Text, sentence.Accuracy(), sentence.WPM(stats))))
+		textLine.SetText(cyan(fmt.Sprintf("%s %s %s", sentence.Text, sentence.Accuracy(), sentence.WPM())))
 	}
 
 	lineNumber++

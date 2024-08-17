@@ -2,6 +2,7 @@ package typing
 
 import (
 	"fmt"
+	"gotty/config"
 	"math/rand"
 	"time"
 )
@@ -27,7 +28,7 @@ func (s *Sentence) Accuracy() string {
 	return CalculateAccuracy(s.CorrectCount, s.TotalCount)
 }
 
-func (s *Sentence) WPM(stats *Stats) string {
+func (s *Sentence) WPM() string {
 	elapsedTime := time.Since(s.StartTime).Minutes()
 	if elapsedTime > 0 {
 		wpm := float64(s.CorrectCount) / elapsedTime
@@ -37,14 +38,15 @@ func (s *Sentence) WPM(stats *Stats) string {
 }
 
 func GetSentences() []Sentence {
-	sentences := []Sentence{
-		{Text: "hogehoge"},
-		{Text: "fuga"},
-	}
+	baseSentences := []string{"hogehoge", "fuga"}
 
-	rand.Shuffle(len(sentences), func(i, j int) {
-		sentences[i], sentences[j] = sentences[j], sentences[i]
-	})
+	totalSentences := config.Config.NumberOfSentences
+	sentences := make([]Sentence, totalSentences)
+
+	for i := 0; i < totalSentences; i++ {
+		randomIndex := rand.Intn(len(baseSentences))
+		sentences[i] = Sentence{Text: baseSentences[randomIndex]}
+	}
 
 	return sentences
 }
