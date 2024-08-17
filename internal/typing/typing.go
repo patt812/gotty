@@ -20,7 +20,7 @@ type Play struct {
 	TextLine      *display.TerminalLine
 	MissLine      *display.TerminalLine
 	TimerLine     *display.TerminalLine
-	AccuracyLine  *display.TerminalLine
+	StatsLine     *display.TerminalLine
 	ProgressLine  *display.TerminalLine
 	WaitGroup     *sync.WaitGroup
 	Sentences     []Sentence
@@ -46,6 +46,8 @@ func (g *Play) Start(onExit func()) {
 
 		g.CurrentInput = ""
 		g.CurrentIndex++
+
+		g.Stats.ResetInterval() // 次の文章に進むときに区間をリセット
 	}
 
 	g.Stats.StopTimer()
@@ -58,7 +60,7 @@ func (g *Play) initGame() {
 	g.TextLine = display.NewTerminalLine(1)
 	g.MissLine = display.NewTerminalLine(2)
 	g.TimerLine = display.NewTerminalLine(3)
-	g.AccuracyLine = display.NewTerminalLine(4)
+	g.StatsLine = display.NewTerminalLine(4)
 	g.ProgressLine = display.NewTerminalLine(5)
 
 	g.Reader = bufio.NewReader(os.Stdin)
@@ -77,7 +79,7 @@ func (g *Play) initGame() {
 	g.CurrentIndex = 0
 	g.CurrentInput = ""
 
-	g.updateAccuracy()
+	g.updateStats()
 }
 
 func (g *Play) handleUserInput(onExit func()) string {
@@ -109,12 +111,12 @@ func (g *Play) handleUserInput(onExit func()) string {
 		if len(g.CurrentInput) <= len(g.CurrentTarget) && !correct {
 			g.MissLine.ShowMissMessage()
 			g.CurrentInput = g.CurrentInput[:len(g.CurrentInput)-1]
-			g.updateAccuracy()
+			g.updateStats()
 			continue
 		}
 
 		ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
-		g.updateAccuracy()
+		g.updateStats()
 
 		if g.CurrentInput == g.CurrentTarget {
 			return g.CurrentInput
@@ -122,8 +124,9 @@ func (g *Play) handleUserInput(onExit func()) string {
 	}
 }
 
-func (g *Play) updateAccuracy() {
-	g.AccuracyLine.SetText(fmt.Sprintf("Accuracy: %s", g.Stats.GetAccuracy()))
+func (g *Play) updateStats() {
+	g.StatsLine.SetText(fmt.Sprintf("Accuracy: %s WPM: %s (Current: %s)",
+		g.Stats.GetAccuracy(), g.Stats.GetTotalWPM(), g.Stats.GetCurrentWPM()))
 }
 
 func initializeTerminal() *term.State {

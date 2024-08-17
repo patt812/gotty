@@ -21,16 +21,16 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onE
 		lineNumber++
 		textLine := display.NewTerminalLine(lineNumber)
 		cyan := color.New(color.FgCyan).SprintFunc()
-		textLine.SetText(cyan(sentence.Text + " " + sentence.Accuracy()))
+		textLine.SetText(cyan(fmt.Sprintf("%s %s %s", sentence.Text, sentence.Accuracy(), sentence.WPM(stats))))
 	}
 
 	lineNumber++
-	summaryLine := display.NewTerminalLine(lineNumber)
-	summaryLine.SetText(fmt.Sprintf("Number of sentences: %d", len(sentences)))
+	totalAccuracyLine := display.NewTerminalLine(lineNumber)
+	totalAccuracyLine.SetText(fmt.Sprintf("Total Accuracy: %s", stats.GetAccuracy()))
 
 	lineNumber++
-	accuracyLine := display.NewTerminalLine(lineNumber)
-	accuracyLine.SetText(fmt.Sprintf("Total Accuracy: %s", stats.GetAccuracy()))
+	totalWPMLine := display.NewTerminalLine(lineNumber)
+	totalWPMLine.SetText(fmt.Sprintf("Total WPM: %s", stats.GetTotalWPM()))
 
 	lineNumber++
 	timeLine := display.NewTerminalLine(lineNumber)
