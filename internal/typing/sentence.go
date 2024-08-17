@@ -1,4 +1,4 @@
-package game
+package typing
 
 import (
 	"math/rand"

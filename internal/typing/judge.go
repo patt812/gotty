@@ -1,4 +1,4 @@
-package game
+package typing
 
 type Judge struct {
 	IsCorrectFunc func(string, string, int) bool

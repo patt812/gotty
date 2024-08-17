@@ -2,7 +2,7 @@ package menu
 
 import (
 	"fmt"
-	"gotty/internal/game"
+	"gotty/internal/typing"
 	"gotty/pkg/display"
 
 	"github.com/manifoldco/promptui"
@@ -35,7 +35,7 @@ func ShowMainMenu() {
 
 	switch result {
 	case "Play":
-		g := game.Game{}
+		g := typing.Game{}
 		g.Start(ShowMainMenu)
 	case "Exit":
 		return
