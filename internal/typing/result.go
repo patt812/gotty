@@ -9,7 +9,7 @@ import (
 	"github.com/fatih/color"
 )
 
-func ShowResult(sentences []Sentence, totalTime time.Duration, onExit func()) {
+func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onExit func()) {
 	display.ClearTerminal()
 
 	lineNumber := 1
@@ -27,6 +27,10 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, onExit func()) {
 	lineNumber++
 	summaryLine := display.NewTerminalLine(lineNumber)
 	summaryLine.SetText(fmt.Sprintf("Number of sentences: %d", len(sentences)))
+
+	lineNumber++
+	accuracyLine := display.NewTerminalLine(lineNumber)
+	accuracyLine.SetText(fmt.Sprintf("Accuracy: %s", stats.Accuracy()))
 
 	lineNumber++
 	timeLine := display.NewTerminalLine(lineNumber)

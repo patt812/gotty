@@ -17,9 +17,11 @@ type Play struct {
 	Reader        *bufio.Reader
 	Timer         *Timer
 	Judge         *Judge
+	Stats         *Stats
 	TextLine      *display.TerminalLine
 	MissLine      *display.TerminalLine
 	TimerLine     *display.TerminalLine
+	AccuracyLine  *display.TerminalLine
 	ProgressLine  *display.TerminalLine
 	WaitGroup     *sync.WaitGroup
 	Sentences     []Sentence
@@ -54,14 +56,15 @@ func (g *Play) Start(onExit func()) {
 	g.WaitGroup.Wait()
 
 	totalTime := time.Since(g.Timer.StartTime)
-	ShowResult(g.Sentences, totalTime, onExit)
+	ShowResult(g.Sentences, totalTime, g.Stats, onExit)
 }
 
 func (g *Play) initGame() {
 	g.TextLine = display.NewTerminalLine(1)
 	g.MissLine = display.NewTerminalLine(2)
 	g.TimerLine = display.NewTerminalLine(3)
-	g.ProgressLine = display.NewTerminalLine(4)
+	g.AccuracyLine = display.NewTerminalLine(4)
+	g.ProgressLine = display.NewTerminalLine(5)
 
 	g.Reader = bufio.NewReader(os.Stdin)
 	g.Timer = NewTimer()
@@ -75,10 +78,13 @@ func (g *Play) initGame() {
 	}()
 
 	g.Judge = NewJudge()
+	g.Stats = NewStats()
 
 	g.Sentences = GetSentences()
 	g.CurrentIndex = 0
 	g.CurrentInput = ""
+
+	g.updateAccuracy()
 }
 
 func (g *Play) handleUserInput(onExit func()) string {
@@ -97,22 +103,31 @@ func (g *Play) handleUserInput(onExit func()) string {
 			return ""
 		}
 
+		correct := g.Judge.isCorrect(g.CurrentInput+string(char), g.CurrentTarget, len(g.CurrentInput))
+		g.Stats.Update(correct)
+
 		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget)
 
 		g.TextLine.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
 
-		if len(g.CurrentInput) <= len(g.CurrentTarget) && !g.Judge.isCorrect(g.CurrentInput, g.CurrentTarget, len(g.CurrentInput)-1) {
+		if len(g.CurrentInput) <= len(g.CurrentTarget) && !correct {
 			g.MissLine.ShowMissMessage()
 			g.CurrentInput = g.CurrentInput[:len(g.CurrentInput)-1]
+			g.updateAccuracy()
 			continue
 		}
 
 		ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
+		g.updateAccuracy()
 
 		if g.CurrentInput == g.CurrentTarget {
 			return g.CurrentInput
 		}
 	}
+}
+
+func (g *Play) updateAccuracy() {
+	g.AccuracyLine.SetText(fmt.Sprintf("Accuracy: %s", g.Stats.Accuracy()))
 }
 
 func initializeTerminal() *term.State {

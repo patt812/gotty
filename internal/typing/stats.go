@@ -53,3 +53,29 @@ func ShowProgressBar(current, total int, progressLine *display.TerminalLine) {
 	bar := strings.Repeat("=", progress-1) + ">" + strings.Repeat("-", progressBase-progress)
 	progressLine.SetText(fmt.Sprintf("%d / %d [%s]", current, total, bar))
 }
+
+type Stats struct {
+	CorrectCount int
+	TotalCount   int
+}
+
+func NewStats() *Stats {
+	return &Stats{
+		CorrectCount: 0,
+		TotalCount:   0,
+	}
+}
+
+func (s *Stats) Update(correct bool) {
+	s.TotalCount++
+	if correct {
+		s.CorrectCount++
+	}
+}
+
+func (s *Stats) Accuracy() string {
+	if s.TotalCount == 0 {
+		return "---"
+	}
+	return fmt.Sprintf("%.2f%%", float64(s.CorrectCount)/float64(s.TotalCount)*100)
+}
