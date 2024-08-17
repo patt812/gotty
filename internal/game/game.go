@@ -13,49 +13,110 @@ import (
 	"golang.org/x/term"
 )
 
-func Start(onExit func()) {
-	display.HideCursor()
-	defer display.ShowCursor()
+type Game struct {
+	Reader        *bufio.Reader
+	Timer         *Timer
+	Judge         *Judge
+	TextLine      *display.TerminalLine
+	MissLine      *display.TerminalLine
+	TimerLine     *display.TerminalLine
+	ProgressLine  *display.TerminalLine
+	WaitGroup     *sync.WaitGroup
+	Sentences     []Sentence
+	CurrentIndex  int
+	CurrentInput  string
+	CurrentTarget string
+}
 
+func (g *Game) Start(onExit func()) {
 	oldState := initializeTerminal()
-	defer display.RestoreTerminal(oldState)
+	defer RestoreTerminal(oldState)
 
-	sentences := GetSentences()
-	totalSentences := len(sentences)
+	g.initGame()
 
-	reader := bufio.NewReader(os.Stdin)
+	for g.CurrentIndex < len(g.Sentences) {
+		g.CurrentTarget = g.Sentences[g.CurrentIndex].Text
+		g.TextLine.SetText(g.CurrentTarget)
 
-	startTime := time.Now()
-	stopTimer := make(chan struct{})
-	pauseTimer := make(chan bool)
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		RunTimer(startTime, stopTimer, pauseTimer)
-	}()
-
-	for i := 0; i < totalSentences; i++ {
-		targetText := sentences[i].Text
-		displaySentence(targetText, i+1, totalSentences)
-
-		userInput := handleUserInput(reader, targetText, i+1, totalSentences, stopTimer, pauseTimer)
+		userInput := g.handleUserInput(onExit)
 		if userInput == "" {
-			safeClose(stopTimer)
-			wg.Wait()
+			g.Timer.Stop()
+			g.WaitGroup.Wait()
 			return
 		}
+
+		g.CurrentInput = ""
+
+		g.CurrentIndex++
 	}
 
-	safeClose(stopTimer)
-	wg.Wait()
+	g.Timer.Stop()
+	g.WaitGroup.Wait()
 
-	totalTime := time.Since(startTime)
-	ShowResult(sentences, totalTime, onExit)
+	totalTime := time.Since(g.Timer.StartTime)
+	ShowResult(g.Sentences, totalTime, onExit)
+}
+
+func (g *Game) initGame() {
+	g.TextLine = display.NewTerminalLine(1)
+	g.MissLine = display.NewTerminalLine(2)
+	g.TimerLine = display.NewTerminalLine(3)
+	g.ProgressLine = display.NewTerminalLine(4)
+
+	g.Reader = bufio.NewReader(os.Stdin)
+	g.Timer = NewTimer()
+
+	g.WaitGroup = &sync.WaitGroup{}
+	g.WaitGroup.Add(1)
+
+	go func() {
+		defer g.WaitGroup.Done()
+		g.Timer.RunTimer(g.TimerLine)
+	}()
+
+	g.Judge = NewJudge()
+
+	g.Sentences = GetSentences()
+	g.CurrentIndex = 0
+	g.CurrentInput = ""
+}
+
+func (g *Game) handleUserInput(onExit func()) string {
+	ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
+
+	for {
+		char, _, err := g.Reader.ReadRune()
+		if err != nil {
+			fmt.Println("\nError reading input:", err)
+			os.Exit(1)
+		}
+
+		if g.Judge.IsExit(char) {
+			fmt.Println("\nGame terminated by Escape key")
+			g.Timer.Stop()
+			return ""
+		}
+
+		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget)
+
+		g.TextLine.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
+
+		if len(g.CurrentInput) <= len(g.CurrentTarget) && !g.Judge.isCorrect(g.CurrentInput, g.CurrentTarget, len(g.CurrentInput)-1) {
+			g.MissLine.ShowMissMessage()
+			g.CurrentInput = g.CurrentInput[:len(g.CurrentInput)-1]
+			continue
+		}
+
+		ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
+
+		if g.CurrentInput == g.CurrentTarget {
+			return g.CurrentInput
+		}
+	}
 }
 
 func initializeTerminal() *term.State {
+	display.HideCursor()
 	display.ClearTerminal()
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -68,66 +129,10 @@ func initializeTerminal() *term.State {
 	return oldState
 }
 
-func displaySentence(sentence string, currentSentence, totalSentences int) {
-	display.ClearTerminal()
-	fmt.Print(sentence)
-	fmt.Print("\r")
-
-	fmt.Print("\033[3B")
-	ShowProgressBar(currentSentence, totalSentences)
-	fmt.Print("\033[3A")
-}
-
-func safeClose(ch chan struct{}) {
-	select {
-	case <-ch:
-
-	default:
-		close(ch)
-	}
-}
-
-func handleUserInput(reader *bufio.Reader, targetText string, currentSentence, totalSentences int, stopTimer chan struct{}, pauseTimer chan bool) string {
-	userInput := ""
-
-	for {
-		char, _, err := reader.ReadRune()
-		if err != nil {
-			fmt.Println("\nError reading input:", err)
-			os.Exit(1)
-		}
-
-		if char == 27 {
-			fmt.Println("\nGame terminated by Escape key")
-			safeClose(stopTimer)
-			return ""
-		}
-
-		if char == 127 && len(userInput) > 0 {
-			userInput = userInput[:len(userInput)-1]
-		} else if len(userInput) < len(targetText) {
-			userInput += string(char)
-		}
-
-		if len(userInput) <= len(targetText) && userInput[len(userInput)-1] != targetText[len(userInput)-1] {
-
-			pauseTimer <- true
-			display.ShowMissMessage()
-			userInput = userInput[:len(userInput)-1]
-
-			pauseTimer <- false
-			continue
-		}
-
-		fmt.Print("\r\033[K")
-		display.UpdateDisplay(targetText, userInput)
-
-		fmt.Print("\033[3B")
-		ShowProgressBar(currentSentence, totalSentences)
-		fmt.Print("\033[3A")
-
-		if userInput == targetText {
-			return userInput
-		}
+func RestoreTerminal(oldState *term.State) {
+	err := term.Restore(int(syscall.Stdin), oldState)
+	display.ShowCursor()
+	if err != nil {
+		fmt.Println("Error restoring terminal:", err)
 	}
 }

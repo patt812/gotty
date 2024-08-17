@@ -2,13 +2,28 @@ package game
 
 import (
 	"fmt"
+	"gotty/pkg/display"
 	"strings"
 	"time"
 )
 
 const progressBase = 20
 
-func RunTimer(startTime time.Time, stopTimer chan struct{}, pauseTimer chan bool) {
+type Timer struct {
+	StartTime  time.Time
+	StopTimer  chan struct{}
+	PauseTimer chan bool
+}
+
+func NewTimer() *Timer {
+	return &Timer{
+		StartTime:  time.Now(),
+		StopTimer:  make(chan struct{}),
+		PauseTimer: make(chan bool),
+	}
+}
+
+func (t *Timer) RunTimer(timerLine *display.TerminalLine) {
 	ticker := time.NewTicker(10 * time.Millisecond)
 	defer ticker.Stop()
 
@@ -16,24 +31,25 @@ func RunTimer(startTime time.Time, stopTimer chan struct{}, pauseTimer chan bool
 
 	for {
 		select {
-		case <-stopTimer:
+		case <-t.StopTimer:
 			return
-		case pause := <-pauseTimer:
+		case pause := <-t.PauseTimer:
 			running = !pause
 		case <-ticker.C:
 			if running {
-				elapsed := time.Since(startTime)
-				timerString := fmt.Sprintf("\033[2K\r%02d.%03d", int(elapsed.Seconds()), int(elapsed.Milliseconds()%1000))
-				fmt.Print("\033[2B")
-				fmt.Print(timerString)
-				fmt.Print("\033[2A")
+				elapsed := time.Since(t.StartTime)
+				timerLine.SetText(fmt.Sprintf("%02d.%03d", int(elapsed.Seconds()), int(elapsed.Milliseconds()%1000)))
 			}
 		}
 	}
 }
 
-func ShowProgressBar(current, total int) {
+func (t *Timer) Stop() {
+	close(t.StopTimer)
+}
+
+func ShowProgressBar(current, total int, progressLine *display.TerminalLine) {
 	progress := int(float64(current) / float64(total) * progressBase)
 	bar := strings.Repeat("=", progress-1) + ">" + strings.Repeat("-", progressBase-progress)
-	fmt.Printf("\033[2K\r%d / %d [%s]", current, total, bar)
+	progressLine.SetText(fmt.Sprintf("%d / %d [%s]", current, total, bar))
 }

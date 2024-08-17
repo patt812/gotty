@@ -12,37 +12,31 @@ import (
 func ShowResult(sentences []Sentence, totalTime time.Duration, onExit func()) {
 	display.ClearTerminal()
 
-	display.HideCursor()
-	defer display.ShowCursor()
+	lineNumber := 1
 
-	displaySentences(sentences)
-	displaySummary(len(sentences), totalTime)
-
-	waitForEscapeKey(onExit)
-}
-
-func displaySentences(sentences []Sentence) {
-	cyan := color.New(color.FgCyan).SprintFunc()
-
-	fmt.Print("\033[K")
-	fmt.Println("All Sentences:")
+	titleLine := display.NewTerminalLine(lineNumber)
+	titleLine.SetText("All Sentences:")
 
 	for _, sentence := range sentences {
-		fmt.Print("\r\033[K")
-		fmt.Printf("%s\n", cyan(sentence.Text))
+		lineNumber++
+		textLine := display.NewTerminalLine(lineNumber)
+		cyan := color.New(color.FgCyan).SprintFunc()
+		textLine.SetText(cyan(sentence.Text))
 	}
 
-	fmt.Print("\033[1B")
-}
+	lineNumber++
+	summaryLine := display.NewTerminalLine(lineNumber)
+	summaryLine.SetText(fmt.Sprintf("Number of sentences: %d", len(sentences)))
 
-func displaySummary(sentenceCount int, totalTime time.Duration) {
-	fmt.Print("\r\033[K")
-	fmt.Printf("Number of sentences: %d\n", sentenceCount)
-	fmt.Print("\r")
-	fmt.Printf("Total time: %02d.%03d seconds\n", int(totalTime.Seconds()), int(totalTime.Milliseconds()%1000))
+	lineNumber++
+	timeLine := display.NewTerminalLine(lineNumber)
+	timeLine.SetText(fmt.Sprintf("Total time: %02d.%03d seconds", int(totalTime.Seconds()), int(totalTime.Milliseconds()%1000)))
 
-	fmt.Print("\r\033[K")
-	fmt.Println("Press ESC to return to the menu...")
+	lineNumber++
+	exitLine := display.NewTerminalLine(lineNumber)
+	exitLine.SetText("Press ESC to return to the menu")
+
+	waitForEscapeKey(onExit)
 }
 
 func waitForEscapeKey(onExit func()) {
