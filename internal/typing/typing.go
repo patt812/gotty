@@ -41,8 +41,6 @@ func (g *Play) Start(onExit func()) {
 
 		userInput := g.handleUserInput(onExit)
 		if userInput == "" {
-			g.Stats.StopTimer()
-			g.WaitGroup.Wait()
 			return
 		}
 
@@ -95,6 +93,8 @@ func (g *Play) handleUserInput(onExit func()) string {
 		if g.Judge.IsExit(char) {
 			fmt.Println("\nGame terminated by Escape key")
 			g.Stats.StopTimer()
+			g.WaitGroup.Wait()
+			ShowResult(g.Sentences, time.Since(g.Stats.Timer.StartTime), g.Stats, onExit)
 			return ""
 		}
 
