@@ -105,6 +105,7 @@ func (g *Play) handleUserInput(onExit func()) string {
 
 		correct := g.Judge.isCorrect(g.CurrentInput+string(char), g.CurrentTarget, len(g.CurrentInput))
 		g.Stats.Update(correct)
+		g.Sentences[g.CurrentIndex].UpdateStats(correct)
 
 		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget)
 
@@ -127,7 +128,7 @@ func (g *Play) handleUserInput(onExit func()) string {
 }
 
 func (g *Play) updateAccuracy() {
-	g.AccuracyLine.SetText(fmt.Sprintf("Accuracy: %s", g.Stats.Accuracy()))
+	g.AccuracyLine.SetText(fmt.Sprintf("Accuracy: %s", g.Stats.GetAccuracy()))
 }
 
 func initializeTerminal() *term.State {

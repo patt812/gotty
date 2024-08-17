@@ -73,9 +73,13 @@ func (s *Stats) Update(correct bool) {
 	}
 }
 
-func (s *Stats) Accuracy() string {
-	if s.TotalCount == 0 {
+func CalculateAccuracy(correctCount, totalCount int) string {
+	if totalCount == 0 {
 		return "---"
 	}
-	return fmt.Sprintf("%.2f%%", float64(s.CorrectCount)/float64(s.TotalCount)*100)
+	return fmt.Sprintf("%.2f%%", float64(correctCount)/float64(totalCount)*100)
+}
+
+func (s *Stats) GetAccuracy() string {
+	return CalculateAccuracy(s.CorrectCount, s.TotalCount)
 }

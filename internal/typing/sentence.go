@@ -5,7 +5,20 @@ import (
 )
 
 type Sentence struct {
-	Text string
+	Text         string
+	CorrectCount int
+	TotalCount   int
+}
+
+func (s *Sentence) UpdateStats(correct bool) {
+	s.TotalCount++
+	if correct {
+		s.CorrectCount++
+	}
+}
+
+func (s *Sentence) Accuracy() string {
+	return CalculateAccuracy(s.CorrectCount, s.TotalCount)
 }
 
 func GetSentences() []Sentence {

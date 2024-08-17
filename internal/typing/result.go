@@ -21,7 +21,7 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onE
 		lineNumber++
 		textLine := display.NewTerminalLine(lineNumber)
 		cyan := color.New(color.FgCyan).SprintFunc()
-		textLine.SetText(cyan(sentence.Text))
+		textLine.SetText(cyan(sentence.Text + " " + sentence.Accuracy()))
 	}
 
 	lineNumber++
@@ -30,7 +30,7 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onE
 
 	lineNumber++
 	accuracyLine := display.NewTerminalLine(lineNumber)
-	accuracyLine.SetText(fmt.Sprintf("Accuracy: %s", stats.Accuracy()))
+	accuracyLine.SetText(fmt.Sprintf("Total Accuracy: %s", stats.GetAccuracy()))
 
 	lineNumber++
 	timeLine := display.NewTerminalLine(lineNumber)
