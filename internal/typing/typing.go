@@ -13,7 +13,7 @@ import (
 	"golang.org/x/term"
 )
 
-type Game struct {
+type Play struct {
 	Reader        *bufio.Reader
 	Timer         *Timer
 	Judge         *Judge
@@ -28,7 +28,7 @@ type Game struct {
 	CurrentTarget string
 }
 
-func (g *Game) Start(onExit func()) {
+func (g *Play) Start(onExit func()) {
 	oldState := initializeTerminal()
 	defer RestoreTerminal(oldState)
 
@@ -57,7 +57,7 @@ func (g *Game) Start(onExit func()) {
 	ShowResult(g.Sentences, totalTime, onExit)
 }
 
-func (g *Game) initGame() {
+func (g *Play) initGame() {
 	g.TextLine = display.NewTerminalLine(1)
 	g.MissLine = display.NewTerminalLine(2)
 	g.TimerLine = display.NewTerminalLine(3)
@@ -81,7 +81,7 @@ func (g *Game) initGame() {
 	g.CurrentInput = ""
 }
 
-func (g *Game) handleUserInput(onExit func()) string {
+func (g *Play) handleUserInput(onExit func()) string {
 	ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
 
 	for {

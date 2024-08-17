@@ -35,7 +35,7 @@ func ShowMainMenu() {
 
 	switch result {
 	case "Play":
-		g := typing.Game{}
+		g := typing.Play{}
 		g.Start(ShowMainMenu)
 	case "Exit":
 		return
