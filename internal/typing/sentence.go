@@ -38,15 +38,18 @@ func (s *Sentence) WPM() string {
 }
 
 func GetSentences() []Sentence {
-	baseSentences := []string{"hogehoge", "fuga"}
-
-	totalSentences := config.Config.NumberOfSentences
-	sentences := make([]Sentence, totalSentences)
-
-	for i := 0; i < totalSentences; i++ {
-		randomIndex := rand.Intn(len(baseSentences))
-		sentences[i] = Sentence{Text: baseSentences[randomIndex]}
+	if len(config.Sentences) == 0 {
+		fmt.Println("No sentences available. Please check your sentences.json file.")
+		return nil
 	}
 
-	return sentences
+	totalSentences := config.Config.NumberOfSentences
+	selectedSentences := make([]Sentence, totalSentences)
+
+	for i := 0; i < totalSentences; i++ {
+		randomIndex := rand.Intn(len(config.Sentences))
+		selectedSentences[i] = Sentence{Text: config.Sentences[randomIndex]}
+	}
+
+	return selectedSentences
 }
