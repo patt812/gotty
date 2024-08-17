@@ -5,6 +5,7 @@ import (
 	"gotty/config"
 	"gotty/internal/typing"
 	"gotty/pkg/display"
+	"os"
 	"strconv"
 
 	"github.com/manifoldco/promptui"
@@ -42,7 +43,8 @@ func ShowMainMenu() {
 	case "Sentence":
 		ShowSentenceSubMenu()
 	case "Exit":
-		return
+		display.ClearTerminal()
+		os.Exit(0)
 	}
 }
 
