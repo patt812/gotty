@@ -15,7 +15,6 @@ import (
 
 type Play struct {
 	Reader        *bufio.Reader
-	Timer         *Timer
 	Judge         *Judge
 	Stats         *Stats
 	TextLine      *display.TerminalLine
@@ -42,21 +41,19 @@ func (g *Play) Start(onExit func()) {
 
 		userInput := g.handleUserInput(onExit)
 		if userInput == "" {
-			g.Timer.Stop()
+			g.Stats.StopTimer()
 			g.WaitGroup.Wait()
 			return
 		}
 
 		g.CurrentInput = ""
-
 		g.CurrentIndex++
 	}
 
-	g.Timer.Stop()
+	g.Stats.StopTimer()
 	g.WaitGroup.Wait()
 
-	totalTime := time.Since(g.Timer.StartTime)
-	ShowResult(g.Sentences, totalTime, g.Stats, onExit)
+	ShowResult(g.Sentences, time.Since(g.Stats.Timer.StartTime), g.Stats, onExit)
 }
 
 func (g *Play) initGame() {
@@ -67,19 +64,17 @@ func (g *Play) initGame() {
 	g.ProgressLine = display.NewTerminalLine(5)
 
 	g.Reader = bufio.NewReader(os.Stdin)
-	g.Timer = NewTimer()
+	g.Stats = NewStats()
 
 	g.WaitGroup = &sync.WaitGroup{}
 	g.WaitGroup.Add(1)
 
 	go func() {
 		defer g.WaitGroup.Done()
-		g.Timer.RunTimer(g.TimerLine)
+		g.Stats.StartTimer(g.TimerLine)
 	}()
 
 	g.Judge = NewJudge()
-	g.Stats = NewStats()
-
 	g.Sentences = GetSentences()
 	g.CurrentIndex = 0
 	g.CurrentInput = ""
@@ -99,7 +94,7 @@ func (g *Play) handleUserInput(onExit func()) string {
 
 		if g.Judge.IsExit(char) {
 			fmt.Println("\nGame terminated by Escape key")
-			g.Timer.Stop()
+			g.Stats.StopTimer()
 			return ""
 		}
 

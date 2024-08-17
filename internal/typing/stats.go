@@ -9,6 +9,46 @@ import (
 
 const progressBase = 20
 
+type Stats struct {
+	CorrectCount int
+	TotalCount   int
+	Timer        *Timer
+}
+
+func NewStats() *Stats {
+	return &Stats{
+		CorrectCount: 0,
+		TotalCount:   0,
+		Timer:        NewTimer(),
+	}
+}
+
+func (s *Stats) Update(correct bool) {
+	s.TotalCount++
+	if correct {
+		s.CorrectCount++
+	}
+}
+
+func (s *Stats) GetAccuracy() string {
+	return CalculateAccuracy(s.CorrectCount, s.TotalCount)
+}
+
+func (s *Stats) StartTimer(timerLine *display.TerminalLine) {
+	go s.Timer.RunTimer(timerLine)
+}
+
+func (s *Stats) StopTimer() {
+	s.Timer.Stop()
+}
+
+func CalculateAccuracy(correctCount, totalCount int) string {
+	if totalCount == 0 {
+		return "---"
+	}
+	return fmt.Sprintf("%.2f%%", float64(correctCount)/float64(totalCount)*100)
+}
+
 type Timer struct {
 	StartTime  time.Time
 	StopTimer  chan struct{}
@@ -52,34 +92,4 @@ func ShowProgressBar(current, total int, progressLine *display.TerminalLine) {
 	progress := int(float64(current) / float64(total) * progressBase)
 	bar := strings.Repeat("=", progress-1) + ">" + strings.Repeat("-", progressBase-progress)
 	progressLine.SetText(fmt.Sprintf("%d / %d [%s]", current, total, bar))
-}
-
-type Stats struct {
-	CorrectCount int
-	TotalCount   int
-}
-
-func NewStats() *Stats {
-	return &Stats{
-		CorrectCount: 0,
-		TotalCount:   0,
-	}
-}
-
-func (s *Stats) Update(correct bool) {
-	s.TotalCount++
-	if correct {
-		s.CorrectCount++
-	}
-}
-
-func CalculateAccuracy(correctCount, totalCount int) string {
-	if totalCount == 0 {
-		return "---"
-	}
-	return fmt.Sprintf("%.2f%%", float64(correctCount)/float64(totalCount)*100)
-}
-
-func (s *Stats) GetAccuracy() string {
-	return CalculateAccuracy(s.CorrectCount, s.TotalCount)
 }
