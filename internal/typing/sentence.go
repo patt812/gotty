@@ -9,6 +9,7 @@ import (
 
 type Sentence struct {
 	Text         string
+	Kana         string
 	CorrectCount int
 	TotalCount   int
 	StartTime    time.Time
@@ -38,17 +39,15 @@ func (s *Sentence) WPM() string {
 }
 
 func GetSentences() []Sentence {
-	if len(config.Sentences) == 0 {
-		fmt.Println("No sentences available. Please check your sentences.json file.")
-		return nil
-	}
-
 	totalSentences := config.Config.NumberOfSentences
 	selectedSentences := make([]Sentence, totalSentences)
 
 	for i := 0; i < totalSentences; i++ {
 		randomIndex := rand.Intn(len(config.Sentences))
-		selectedSentences[i] = Sentence{Text: config.Sentences[randomIndex]}
+		selectedSentences[i] = Sentence{
+			Text: config.Sentences[randomIndex],
+			Kana: convertToKana(config.Sentences[randomIndex]),
+		}
 	}
 
 	return selectedSentences

@@ -14,19 +14,15 @@ import (
 )
 
 type Play struct {
-	Reader        *bufio.Reader
-	Judge         *Judge
-	Stats         *Stats
-	TextLine      *display.TerminalLine
-	MissLine      *display.TerminalLine
-	TimerLine     *display.TerminalLine
-	StatsLine     *display.TerminalLine
-	ProgressLine  *display.TerminalLine
-	WaitGroup     *sync.WaitGroup
-	Sentences     []Sentence
-	CurrentIndex  int
-	CurrentInput  string
-	CurrentTarget string
+	Reader         *bufio.Reader
+	Judge          Judge
+	DisplayManager DisplayManager
+	Stats          *Stats
+	WaitGroup      *sync.WaitGroup
+	Sentences      []Sentence
+	CurrentIndex   int
+	CurrentInput   string
+	CurrentTarget  Sentence
 }
 
 func (g *Play) Start(onExit func()) {
@@ -36,8 +32,8 @@ func (g *Play) Start(onExit func()) {
 	g.initGame()
 
 	for g.CurrentIndex < len(g.Sentences) {
-		g.CurrentTarget = g.Sentences[g.CurrentIndex].Text
-		g.TextLine.SetText(g.CurrentTarget)
+		g.CurrentTarget = g.Sentences[g.CurrentIndex]
+		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
 
 		userInput := g.handleUserInput(onExit)
 		if userInput == "" {
@@ -47,43 +43,48 @@ func (g *Play) Start(onExit func()) {
 		g.CurrentInput = ""
 		g.CurrentIndex++
 
-		g.Stats.ResetInterval() // 次の文章に進むときに区間をリセット
+		g.Stats.ResetInterval()
 	}
 
 	g.Stats.StopTimer()
 	g.WaitGroup.Wait()
 
-	ShowResult(g.Sentences, time.Since(g.Stats.Timer.StartTime), g.Stats, onExit)
+	ShowResult(g.Sentences, time.Since(g.Stats.StartTime), g.Stats, onExit)
 }
 
 func (g *Play) initGame() {
-	g.TextLine = display.NewTerminalLine(1)
-	g.MissLine = display.NewTerminalLine(2)
-	g.TimerLine = display.NewTerminalLine(3)
-	g.StatsLine = display.NewTerminalLine(4)
-	g.ProgressLine = display.NewTerminalLine(5)
-
 	g.Reader = bufio.NewReader(os.Stdin)
 	g.Stats = NewStats()
 
 	g.WaitGroup = &sync.WaitGroup{}
 	g.WaitGroup.Add(1)
 
+	// タイマーラインを取得し、表示マネージャーがKanaかRomajiかを判別する
+	var timerLine *display.TerminalLine
+	switch dm := g.DisplayManager.(type) {
+	case *RomajiDisplayManager:
+		timerLine = dm.StatsLine
+	case *KanaDisplayManager:
+		timerLine = dm.StatsLine
+	default:
+		timerLine = nil
+	}
+
 	go func() {
 		defer g.WaitGroup.Done()
-		g.Stats.StartTimer(g.TimerLine)
+		g.Stats.StartTimer(timerLine)
 	}()
 
-	g.Judge = NewJudge()
 	g.Sentences = GetSentences()
 	g.CurrentIndex = 0
 	g.CurrentInput = ""
 
+	g.DisplayManager.Initialize()
 	g.updateStats()
 }
 
 func (g *Play) handleUserInput(onExit func()) string {
-	ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
+	g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
 
 	for {
 		char, _, err := g.Reader.ReadRune()
@@ -96,37 +97,36 @@ func (g *Play) handleUserInput(onExit func()) string {
 			fmt.Println("\nGame terminated by Escape key")
 			g.Stats.StopTimer()
 			g.WaitGroup.Wait()
-			ShowResult(g.Sentences, time.Since(g.Stats.Timer.StartTime), g.Stats, onExit)
+			ShowResult(g.Sentences, time.Since(g.Stats.StartTime), g.Stats, onExit)
 			return ""
 		}
 
-		correct := g.Judge.isCorrect(g.CurrentInput+string(char), g.CurrentTarget, len(g.CurrentInput))
+		correct := g.Judge.IsCorrect(g.CurrentInput+string(char), g.CurrentTarget.Text, len(g.CurrentInput))
 		g.Stats.Update(correct)
-		g.Sentences[g.CurrentIndex].UpdateStats(correct)
+		g.CurrentTarget.UpdateStats(correct)
 
-		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget)
+		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget.Text)
 
-		g.TextLine.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
+		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
 
-		if len(g.CurrentInput) <= len(g.CurrentTarget) && !correct {
-			g.MissLine.ShowMissMessage()
+		if len(g.CurrentInput) <= len(g.CurrentTarget.Text) && !correct {
+			g.DisplayManager.ShowMissMessage()
 			g.CurrentInput = g.CurrentInput[:len(g.CurrentInput)-1]
 			g.updateStats()
 			continue
 		}
 
-		ShowProgressBar(g.CurrentIndex+1, len(g.Sentences), g.ProgressLine)
+		g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
 		g.updateStats()
 
-		if g.CurrentInput == g.CurrentTarget {
+		if g.CurrentInput == g.CurrentTarget.Text {
 			return g.CurrentInput
 		}
 	}
 }
 
 func (g *Play) updateStats() {
-	g.StatsLine.SetText(fmt.Sprintf("Accuracy: %s WPM: %s (Current: %s)",
-		g.Stats.GetAccuracy(), g.Stats.GetTotalWPM(), g.Stats.GetCurrentWPM()))
+	g.DisplayManager.UpdateStats(g.Stats)
 }
 
 func initializeTerminal() *term.State {

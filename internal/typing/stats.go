@@ -101,6 +101,11 @@ func NewTimer() *Timer {
 }
 
 func (t *Timer) RunTimer(timerLine *display.TerminalLine) {
+	if timerLine == nil {
+		fmt.Println("Error: timerLine is nil")
+		return
+	}
+
 	ticker := time.NewTicker(10 * time.Millisecond)
 	defer ticker.Stop()
 

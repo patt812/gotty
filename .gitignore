@@ -1,3 +1,4 @@
 .env
 config/config.json
 config/sentences.json
+config/patterns.json
