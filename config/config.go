@@ -9,19 +9,24 @@ import (
 )
 
 type ConfigData struct {
-	NumberOfSentences int `json:"number_of_sentences"`
+	NumberOfSentences int    `json:"number_of_sentences"`
+	InputMode         string `json:"input_mode"`
+}
+
+var defaultConfig = ConfigData{
+	NumberOfSentences: 2,
+	InputMode:         "romaji",
 }
 
 type SentenceConfig struct {
 	Sentences []string `json:"sentences"`
 }
 
+type PatternConfig map[string][]string
+
 var Config ConfigData
 var Sentences []string
-
-var defaultConfig = ConfigData{
-	NumberOfSentences: 2,
-}
+var Patterns PatternConfig
 
 func LoadConfig() error {
 	var configPath string
@@ -65,6 +70,11 @@ func LoadConfig() error {
 		return err
 	}
 
+	err = LoadPatterns()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -101,6 +111,35 @@ func LoadSentences() error {
 	}
 
 	Sentences = sentenceConfig.Sentences
+	return nil
+}
+
+func LoadPatterns() error {
+	filePath := filepath.Join("config", "patterns.json")
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		defaultFilePath := filepath.Join("config", "default_patterns.json")
+		defaultData, err := os.ReadFile(defaultFilePath)
+		if err != nil {
+			return fmt.Errorf("failed to read default_patterns.json: %v", err)
+		}
+
+		err = os.WriteFile(filePath, defaultData, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to create patterns.json: %v", err)
+		}
+	}
+
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read patterns.json: %v", err)
+	}
+
+	err = json.Unmarshal(file, &Patterns)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal patterns.json: %v", err)
+	}
+
 	return nil
 }
 

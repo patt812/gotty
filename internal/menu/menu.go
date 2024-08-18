@@ -12,6 +12,7 @@ import (
 )
 
 func ShowMainMenu() {
+
 	display.ClearTerminal()
 
 	templates := &promptui.SelectTemplates{
@@ -23,10 +24,10 @@ func ShowMainMenu() {
 
 	menu := promptui.Select{
 		Label:     "Select an option",
-		Items:     []string{"Play", "Sentence", "Exit"},
+		Items:     []string{"Play", "Input Mode", "Sentence", "Exit"},
 		Templates: templates,
 		HideHelp:  true,
-		Size:      3,
+		Size:      4,
 	}
 
 	_, result, err := menu.Run()
@@ -38,14 +39,72 @@ func ShowMainMenu() {
 
 	switch result {
 	case "Play":
-		g := typing.Play{}
+
+		var displayManager typing.DisplayManager
+
+		if config.Config.InputMode == "kana" {
+			displayManager = typing.NewKanaDisplayManager()
+		} else {
+			displayManager = typing.NewRomajiDisplayManager()
+		}
+
+		g := typing.Play{
+			DisplayManager: displayManager,
+			Judge:          typing.NewJudge(config.Config.InputMode),
+		}
 		g.Start(ShowMainMenu)
+
+	case "Input Mode":
+		ShowInputModeSubMenu()
+
 	case "Sentence":
 		ShowSentenceSubMenu()
+
 	case "Exit":
 		display.ClearTerminal()
 		os.Exit(0)
 	}
+}
+
+func ShowInputModeSubMenu() {
+	display.ClearTerminal()
+
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}",
+		Active:   `{{ "❯" | cyan }} {{ . | cyan | underline | bold }}`,
+		Inactive: "  {{ . | white }}",
+		Selected: `{{ "✔" | green | bold }} {{ . | bold }}`,
+	}
+
+	inputModeOptions := []string{"Romaji", "Kana"}
+
+	menu := promptui.Select{
+		Label:     "Select Input Mode",
+		Items:     inputModeOptions,
+		Templates: templates,
+		HideHelp:  true,
+		Size:      2,
+	}
+
+	_, result, err := menu.Run()
+
+	if err != nil {
+		fmt.Printf("Input Mode selection failed: %v\n", err)
+		return
+	}
+
+	switch result {
+	case "Romaji":
+		config.Config.InputMode = "romaji"
+	case "Kana":
+		config.Config.InputMode = "kana"
+	}
+
+	if err := config.SaveConfig(); err != nil {
+		fmt.Printf("Failed to save config: %v\n", err)
+	}
+
+	ShowMainMenu()
 }
 
 func ShowSentenceSubMenu() {
