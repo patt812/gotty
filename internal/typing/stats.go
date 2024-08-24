@@ -18,7 +18,6 @@ type Stats struct {
 	CurrentTotal     int
 	Timer            *Timer
 	StartTime        time.Time
-	IntervalStart    time.Time
 	CurrentStartTime time.Time
 }
 
@@ -32,7 +31,6 @@ func NewStats() *Stats {
 		CurrentTotal:     0,
 		Timer:            NewTimer(),
 		StartTime:        time.Now(),
-		IntervalStart:    time.Now(),
 		CurrentStartTime: time.Now(),
 	}
 }
@@ -60,7 +58,6 @@ func (s *Stats) calculateWPM() {
 }
 
 func (s *Stats) ResetInterval() {
-	s.IntervalStart = time.Now()
 	s.CurrentStartTime = time.Now()
 	s.CurrentCorrect = 0
 	s.CurrentTotal = 0
@@ -80,7 +77,6 @@ func (s *Stats) GetTotalWPM() string {
 
 func (s *Stats) StartTimer(timerLine *display.TerminalLine) {
 	s.StartTime = time.Now()
-	s.IntervalStart = s.StartTime
 	s.CurrentStartTime = s.StartTime
 	go s.Timer.RunTimer(timerLine)
 }

@@ -9,7 +9,6 @@ import (
 
 type Sentence struct {
 	Text           string
-	Kana           string
 	RomajiPatterns [][]string
 	CorrectCount   int
 	TotalCount     int
@@ -27,10 +26,17 @@ func (s *Sentence) UpdateStats(correct bool) {
 }
 
 func (s *Sentence) Accuracy() string {
+	if s.TotalCount == 0 {
+		return "---"
+	}
 	return CalculateAccuracy(s.CorrectCount, s.TotalCount)
 }
 
 func (s *Sentence) WPM() string {
+	if s.TotalCount == 0 || s.StartTime.IsZero() {
+		return "0.00"
+	}
+
 	elapsedTime := time.Since(s.StartTime).Minutes()
 	if elapsedTime > 0 {
 		wpm := float64(s.CorrectCount) / elapsedTime
@@ -48,7 +54,6 @@ func GetSentences() []Sentence {
 		text := config.Sentences[randomIndex]
 		selectedSentences[i] = Sentence{
 			Text:           text,
-			Kana:           text,
 			RomajiPatterns: GenerateRomajiPatterns(text),
 		}
 	}
