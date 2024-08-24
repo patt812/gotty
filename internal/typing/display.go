@@ -3,11 +3,13 @@ package typing
 import (
 	"fmt"
 	"gotty/pkg/display"
+
+	"github.com/fatih/color"
 )
 
 type DisplayManager interface {
 	Initialize()
-	UpdateDisplay(sentence Sentence, currentInput string)
+	UpdateDisplay(sentence Sentence, patternIndex int, charIndex int, stats *Stats)
 	UpdateStats(stats *Stats)
 	ShowMissMessage()
 	ShowProgress(current, total int)
@@ -15,7 +17,9 @@ type DisplayManager interface {
 
 type RomajiDisplayManager struct {
 	TextLine     *display.TerminalLine
+	RomajiLine   *display.TerminalLine
 	MissLine     *display.TerminalLine
+	TimerLine    *display.TerminalLine
 	StatsLine    *display.TerminalLine
 	ProgressLine *display.TerminalLine
 }
@@ -23,9 +27,11 @@ type RomajiDisplayManager struct {
 func NewRomajiDisplayManager() *RomajiDisplayManager {
 	return &RomajiDisplayManager{
 		TextLine:     display.NewTerminalLine(1),
-		MissLine:     display.NewTerminalLine(2),
-		StatsLine:    display.NewTerminalLine(3),
-		ProgressLine: display.NewTerminalLine(4),
+		RomajiLine:   display.NewTerminalLine(2),
+		MissLine:     display.NewTerminalLine(3),
+		TimerLine:    display.NewTerminalLine(4),
+		StatsLine:    display.NewTerminalLine(5),
+		ProgressLine: display.NewTerminalLine(6),
 	}
 }
 
@@ -34,19 +40,37 @@ func (d *RomajiDisplayManager) Initialize() {
 	if d.TextLine == nil {
 		d.TextLine = display.NewTerminalLine(1)
 	}
+	if d.RomajiLine == nil {
+		d.RomajiLine = display.NewTerminalLine(2)
+	}
 	if d.MissLine == nil {
-		d.MissLine = display.NewTerminalLine(2)
+		d.MissLine = display.NewTerminalLine(3)
+	}
+	if d.TimerLine == nil {
+		d.TimerLine = display.NewTerminalLine(4)
 	}
 	if d.StatsLine == nil {
-		d.StatsLine = display.NewTerminalLine(3)
+		d.StatsLine = display.NewTerminalLine(5)
 	}
 	if d.ProgressLine == nil {
-		d.ProgressLine = display.NewTerminalLine(4)
+		d.ProgressLine = display.NewTerminalLine(6)
 	}
 }
 
-func (d *RomajiDisplayManager) UpdateDisplay(sentence Sentence, currentInput string) {
-	d.TextLine.UpdateDisplay(sentence.Text, currentInput)
+func (d *RomajiDisplayManager) UpdateDisplay(sentence Sentence, currentIndex int, charIndex int, stats *Stats) {
+	romajiDisplay := ""
+	for i, patterns := range sentence.RomajiPatterns {
+		if len(patterns) > 0 {
+			if i < currentIndex {
+				romajiDisplay += color.New(color.FgCyan).Sprint(patterns[0])
+			} else {
+				romajiDisplay += patterns[0]
+			}
+		}
+	}
+	d.TextLine.SetText(sentence.Text)
+	d.RomajiLine.SetText(romajiDisplay)
+	d.UpdateStats(stats)
 }
 
 func (d *RomajiDisplayManager) UpdateStats(stats *Stats) {
@@ -64,8 +88,9 @@ func (d *RomajiDisplayManager) ShowProgress(current, total int) {
 
 type KanaDisplayManager struct {
 	TextLine     *display.TerminalLine
-	KanaLine     *display.TerminalLine
+	RomajiLine   *display.TerminalLine
 	MissLine     *display.TerminalLine
+	TimerLine    *display.TerminalLine
 	StatsLine    *display.TerminalLine
 	ProgressLine *display.TerminalLine
 }
@@ -73,10 +98,11 @@ type KanaDisplayManager struct {
 func NewKanaDisplayManager() *KanaDisplayManager {
 	return &KanaDisplayManager{
 		TextLine:     display.NewTerminalLine(1),
-		KanaLine:     display.NewTerminalLine(2),
+		RomajiLine:   display.NewTerminalLine(2),
 		MissLine:     display.NewTerminalLine(3),
-		StatsLine:    display.NewTerminalLine(4),
-		ProgressLine: display.NewTerminalLine(5),
+		TimerLine:    display.NewTerminalLine(4),
+		StatsLine:    display.NewTerminalLine(5),
+		ProgressLine: display.NewTerminalLine(6),
 	}
 }
 
@@ -85,24 +111,44 @@ func (d *KanaDisplayManager) Initialize() {
 	if d.TextLine == nil {
 		d.TextLine = display.NewTerminalLine(1)
 	}
-	if d.KanaLine == nil {
-		d.KanaLine = display.NewTerminalLine(2)
+	if d.RomajiLine == nil {
+		d.RomajiLine = display.NewTerminalLine(2)
 	}
 	if d.MissLine == nil {
 		d.MissLine = display.NewTerminalLine(3)
 	}
+	if d.TimerLine == nil {
+		d.TimerLine = display.NewTerminalLine(4)
+	}
 	if d.StatsLine == nil {
-		d.StatsLine = display.NewTerminalLine(4)
+		d.StatsLine = display.NewTerminalLine(5)
 	}
 	if d.ProgressLine == nil {
-		d.ProgressLine = display.NewTerminalLine(5)
+		d.ProgressLine = display.NewTerminalLine(6)
 	}
 }
 
-func (d *KanaDisplayManager) UpdateDisplay(sentence Sentence, currentInput string) {
+func (d *KanaDisplayManager) UpdateDisplay(sentence Sentence, patternIndex int, charIndex int, stats *Stats) {
+	romajiDisplay := ""
+	correctColored := ""
+
+	for i, patterns := range sentence.RomajiPatterns {
+		if len(patterns) > 0 {
+			if i < patternIndex {
+				correctColored += color.New(color.FgCyan).Sprint(patterns[0])
+			} else if i == patternIndex {
+				correctColored += color.New(color.FgCyan).Sprint(patterns[0][:charIndex])
+				correctColored += color.New(color.FgWhite).Sprint(patterns[0][charIndex:])
+			} else {
+				correctColored += color.New(color.FgWhite).Sprint(patterns[0])
+			}
+			romajiDisplay += patterns[0]
+		}
+	}
+
 	d.TextLine.SetText(sentence.Text)
-	d.KanaLine.SetText(sentence.Kana)
-	d.TextLine.UpdateDisplay(sentence.Text, currentInput)
+	d.RomajiLine.SetText(correctColored)
+	d.UpdateStats(stats)
 }
 
 func (d *KanaDisplayManager) UpdateStats(stats *Stats) {

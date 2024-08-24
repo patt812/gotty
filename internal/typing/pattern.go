@@ -11,8 +11,8 @@ var romajiToKanaMap map[string][]string
 
 func LoadPatterns() error {
 	patternFilePath := filepath.Join("config", "patterns.json")
-
 	file, err := os.Open(patternFilePath)
+
 	if err != nil {
 		return fmt.Errorf("failed to open pattern file: %v", err)
 	}
@@ -27,31 +27,19 @@ func LoadPatterns() error {
 	return nil
 }
 
-func convertToKana(romaji string) string {
-	kana := ""
-	i := 0
-	for i < len(romaji) {
-		if i+2 < len(romaji) {
-			if k, ok := romajiToKanaMap[romaji[i:i+3]]; ok {
-				kana += k[0]
-				i += 3
-				continue
-			}
-		}
-		if i+1 < len(romaji) {
-			if k, ok := romajiToKanaMap[romaji[i:i+2]]; ok {
-				kana += k[0]
-				i += 2
-				continue
-			}
-		}
-		if k, ok := romajiToKanaMap[romaji[i:i+1]]; ok {
-			kana += k[0]
-			i++
-			continue
-		}
-		kana += string(romaji[i])
-		i++
+func GenerateRomajiPatterns(text string) [][]string {
+	if err := LoadPatterns(); err != nil {
+		fmt.Println("Error loading patterns:", err)
+		return nil
 	}
-	return kana
+
+	var romajiPatterns [][]string
+	for _, char := range text {
+		if patterns, exists := romajiToKanaMap[string(char)]; exists {
+			romajiPatterns = append(romajiPatterns, patterns)
+		} else {
+			romajiPatterns = append(romajiPatterns, []string{string(char)})
+		}
+	}
+	return romajiPatterns
 }

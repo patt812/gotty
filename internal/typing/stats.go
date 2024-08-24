@@ -10,51 +10,60 @@ import (
 const progressBase = 20
 
 type Stats struct {
-	CorrectCount  int
-	TotalCount    int
-	TotalWPM      float64
-	CurrentWPM    float64
-	Timer         *Timer
-	StartTime     time.Time
-	IntervalStart time.Time
+	CorrectCount     int
+	TotalCount       int
+	TotalWPM         float64
+	CurrentWPM       float64
+	CurrentCorrect   int
+	CurrentTotal     int
+	Timer            *Timer
+	StartTime        time.Time
+	IntervalStart    time.Time
+	CurrentStartTime time.Time
 }
 
 func NewStats() *Stats {
 	return &Stats{
-		CorrectCount:  0,
-		TotalCount:    0,
-		TotalWPM:      0,
-		CurrentWPM:    0,
-		Timer:         NewTimer(),
-		StartTime:     time.Now(),
-		IntervalStart: time.Now(),
+		CorrectCount:     0,
+		TotalCount:       0,
+		TotalWPM:         0,
+		CurrentWPM:       0,
+		CurrentCorrect:   0,
+		CurrentTotal:     0,
+		Timer:            NewTimer(),
+		StartTime:        time.Now(),
+		IntervalStart:    time.Now(),
+		CurrentStartTime: time.Now(),
 	}
 }
 
 func (s *Stats) Update(correct bool) {
 	s.TotalCount++
+	s.CurrentTotal++
 	if correct {
 		s.CorrectCount++
+		s.CurrentCorrect++
 	}
 	s.calculateWPM()
 }
 
 func (s *Stats) calculateWPM() {
-	// 総WPMを計算
 	elapsedTime := time.Since(s.StartTime).Minutes()
 	if elapsedTime > 0 {
 		s.TotalWPM = float64(s.CorrectCount) / elapsedTime
 	}
 
-	// 現在のWPMを計算
-	intervalTime := time.Since(s.IntervalStart).Minutes()
-	if intervalTime > 0 {
-		s.CurrentWPM = float64(s.CorrectCount) / intervalTime
+	currentElapsedTime := time.Since(s.CurrentStartTime).Minutes()
+	if currentElapsedTime > 0 {
+		s.CurrentWPM = float64(s.CurrentCorrect) / currentElapsedTime
 	}
 }
 
 func (s *Stats) ResetInterval() {
 	s.IntervalStart = time.Now()
+	s.CurrentStartTime = time.Now()
+	s.CurrentCorrect = 0
+	s.CurrentTotal = 0
 }
 
 func (s *Stats) GetAccuracy() string {
@@ -72,6 +81,7 @@ func (s *Stats) GetTotalWPM() string {
 func (s *Stats) StartTimer(timerLine *display.TerminalLine) {
 	s.StartTime = time.Now()
 	s.IntervalStart = s.StartTime
+	s.CurrentStartTime = s.StartTime
 	go s.Timer.RunTimer(timerLine)
 }
 

@@ -13,7 +13,6 @@ func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onE
 	display.ClearTerminal()
 
 	lineNumber := 1
-
 	titleLine := display.NewTerminalLine(lineNumber)
 	titleLine.SetText("All Sentences:")
 
