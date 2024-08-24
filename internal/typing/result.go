@@ -4,36 +4,48 @@ import (
 	"fmt"
 	"gotty/pkg/display"
 	"os"
-	"time"
 
 	"github.com/fatih/color"
 )
 
-func ShowResult(sentences []Sentence, totalTime time.Duration, stats *Stats, onExit func()) {
+type SentenceResult struct {
+	Text     string
+	Accuracy string
+	WPM      string
+}
+
+type Result struct {
+	Sentences     []SentenceResult
+	TotalWPM      string
+	TotalAccuracy string
+	TotalTime     string
+}
+
+func ShowResult(result Result, onExit func()) {
 	display.ClearTerminal()
 
 	lineNumber := 1
 	titleLine := display.NewTerminalLine(lineNumber)
 	titleLine.SetText("All Sentences:")
 
-	for _, sentence := range sentences {
+	for _, sentence := range result.Sentences {
 		lineNumber++
 		textLine := display.NewTerminalLine(lineNumber)
 		cyan := color.New(color.FgCyan).SprintFunc()
-		textLine.SetText(cyan(fmt.Sprintf("%s %s %s", sentence.Text, sentence.Accuracy(), sentence.WPM())))
+		textLine.SetText(cyan(fmt.Sprintf("%s Accuracy: %s WPM: %s", sentence.Text, sentence.Accuracy, sentence.WPM)))
 	}
 
 	lineNumber++
 	totalAccuracyLine := display.NewTerminalLine(lineNumber)
-	totalAccuracyLine.SetText(fmt.Sprintf("Total Accuracy: %s", stats.GetAccuracy()))
+	totalAccuracyLine.SetText(fmt.Sprintf("Total Accuracy: %s", result.TotalAccuracy))
 
 	lineNumber++
 	totalWPMLine := display.NewTerminalLine(lineNumber)
-	totalWPMLine.SetText(fmt.Sprintf("Total WPM: %s", stats.GetTotalWPM()))
+	totalWPMLine.SetText(fmt.Sprintf("Total WPM: %s", result.TotalWPM))
 
 	lineNumber++
 	timeLine := display.NewTerminalLine(lineNumber)
-	timeLine.SetText(fmt.Sprintf("Total time: %02d.%03d seconds", int(totalTime.Seconds()), int(totalTime.Milliseconds()%1000)))
+	timeLine.SetText(fmt.Sprintf("Total time: %s seconds", result.TotalTime))
 
 	lineNumber++
 	exitLine := display.NewTerminalLine(lineNumber)

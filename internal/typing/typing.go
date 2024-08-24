@@ -24,6 +24,7 @@ type Play struct {
 	CurrentIndex   int
 	CurrentInput   string
 	CurrentTarget  Sentence
+	Results        Result
 }
 
 func (g *Play) Start(onExit func()) {
@@ -58,7 +59,11 @@ func (g *Play) Start(onExit func()) {
 	g.Stats.StopTimer()
 	g.WaitGroup.Wait()
 
-	ShowResult(g.Sentences, time.Since(g.Stats.StartTime), g.Stats, onExit)
+	g.Results.TotalAccuracy = g.Stats.GetAccuracy()
+	g.Results.TotalWPM = g.Stats.GetTotalWPM()
+	g.Results.TotalTime = fmt.Sprintf("%02d.%03d", int(time.Since(g.Stats.StartTime).Seconds()), int(time.Since(g.Stats.StartTime).Milliseconds()%1000))
+
+	ShowResult(g.Results, onExit)
 }
 
 func (g *Play) initGame() {
@@ -89,6 +94,10 @@ func (g *Play) initGame() {
 
 	g.DisplayManager.Initialize()
 	g.updateStats()
+
+	g.Results = Result{
+		Sentences: []SentenceResult{},
+	}
 }
 
 func (g *Play) handleUserInput(onExit func()) string {
@@ -105,7 +114,7 @@ func (g *Play) handleUserInput(onExit func()) string {
 			fmt.Println("\nGame terminated by Escape key")
 			g.Stats.StopTimer()
 			g.WaitGroup.Wait()
-			ShowResult(g.Sentences, time.Since(g.Stats.StartTime), g.Stats, onExit)
+			ShowResult(g.Results, onExit)
 			return ""
 		}
 
@@ -116,6 +125,12 @@ func (g *Play) handleUserInput(onExit func()) string {
 			g.CurrentTarget.UpdateStats(true)
 
 			if g.Judge.ShouldGoNext() {
+				g.Results.Sentences = append(g.Results.Sentences, SentenceResult{
+					Text:     g.CurrentTarget.Text,
+					Accuracy: g.Stats.GetAccuracy(),
+					WPM:      g.Stats.GetCurrentWPM(),
+				})
+
 				g.CurrentIndex++
 				if g.CurrentIndex < len(g.Sentences) {
 					g.CurrentTarget = g.Sentences[g.CurrentIndex]
