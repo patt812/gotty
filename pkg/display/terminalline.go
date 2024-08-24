@@ -59,7 +59,7 @@ func (tl *TerminalLine) UpdateDisplay(target, userInput string) {
 			if c == rune(userInput[i]) {
 				color.New(color.FgCyan).Print(string(c))
 			} else {
-				fmt.Print(string(c))
+				color.New(color.FgRed).Print(string(c))
 			}
 		} else {
 			fmt.Print(string(c))

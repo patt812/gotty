@@ -8,11 +8,12 @@ import (
 )
 
 type Sentence struct {
-	Text         string
-	Kana         string
-	CorrectCount int
-	TotalCount   int
-	StartTime    time.Time
+	Text           string
+	Kana           string
+	RomajiPatterns [][]string
+	CorrectCount   int
+	TotalCount     int
+	StartTime      time.Time
 }
 
 func (s *Sentence) UpdateStats(correct bool) {
@@ -44,9 +45,11 @@ func GetSentences() []Sentence {
 
 	for i := 0; i < totalSentences; i++ {
 		randomIndex := rand.Intn(len(config.Sentences))
+		text := config.Sentences[randomIndex]
 		selectedSentences[i] = Sentence{
-			Text: config.Sentences[randomIndex],
-			Kana: convertToKana(config.Sentences[randomIndex]),
+			Text:           text,
+			Kana:           text,
+			RomajiPatterns: GenerateRomajiPatterns(text),
 		}
 	}
 

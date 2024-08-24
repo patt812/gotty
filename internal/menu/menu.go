@@ -39,6 +39,11 @@ func ShowMainMenu() {
 
 	switch result {
 	case "Play":
+		err := config.LoadPatterns()
+		if err != nil {
+			fmt.Printf("Failed to load patterns: %v\n", err)
+			return
+		}
 
 		var displayManager typing.DisplayManager
 
@@ -48,9 +53,15 @@ func ShowMainMenu() {
 			displayManager = typing.NewRomajiDisplayManager()
 		}
 
+		sentences := typing.GetSentences()
+		for i, sentence := range sentences {
+			sentences[i].RomajiPatterns = convertPatternsToSlice(config.Patterns, sentence.Text)
+		}
+
 		g := typing.Play{
 			DisplayManager: displayManager,
-			Judge:          typing.NewJudge(config.Config.InputMode),
+			Judge:          typing.NewJudge(config.Config.InputMode, sentences[0].RomajiPatterns), // 初期化時に最初の sentence のパターンを渡す
+			Sentences:      sentences,                                                             // 変換後の sentences を渡す
 		}
 		g.Start(ShowMainMenu)
 
@@ -64,6 +75,18 @@ func ShowMainMenu() {
 		display.ClearTerminal()
 		os.Exit(0)
 	}
+}
+
+func convertPatternsToSlice(patterns config.PatternConfig, sentence string) [][]string {
+	var result [][]string
+	for _, char := range sentence {
+		if pattern, exists := patterns[string(char)]; exists {
+			result = append(result, pattern)
+		} else {
+			result = append(result, []string{string(char)})
+		}
+	}
+	return result
 }
 
 func ShowInputModeSubMenu() {
@@ -113,7 +136,7 @@ func ShowSentenceSubMenu() {
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}",
 		Active:   `{{ "❯" | cyan }} {{ . | cyan | underline | bold }}`,
-		Inactive: "  {{ . | white }}",
+		Inactive: `{{ . | white }}`,
 		Selected: `{{ "✔" | green | bold }} {{ . | bold }}`,
 	}
 

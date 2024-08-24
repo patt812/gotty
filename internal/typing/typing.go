@@ -3,6 +3,7 @@ package typing
 import (
 	"bufio"
 	"fmt"
+	"gotty/config"
 	"gotty/pkg/display"
 	"os"
 	"os/signal"
@@ -33,7 +34,8 @@ func (g *Play) Start(onExit func()) {
 
 	for g.CurrentIndex < len(g.Sentences) {
 		g.CurrentTarget = g.Sentences[g.CurrentIndex]
-		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
+		g.Stats.ResetInterval()
+		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
 
 		userInput := g.handleUserInput(onExit)
 		if userInput == "" {
@@ -43,7 +45,14 @@ func (g *Play) Start(onExit func()) {
 		g.CurrentInput = ""
 		g.CurrentIndex++
 
-		g.Stats.ResetInterval()
+		if g.CurrentIndex < len(g.Sentences) {
+			g.CurrentTarget = g.Sentences[g.CurrentIndex]
+			g.Judge = NewJudge(config.Config.InputMode, g.CurrentTarget.RomajiPatterns)
+			g.DisplayManager.Initialize()
+			g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
+			g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
+			g.updateStats()
+		}
 	}
 
 	g.Stats.StopTimer()
@@ -59,13 +68,12 @@ func (g *Play) initGame() {
 	g.WaitGroup = &sync.WaitGroup{}
 	g.WaitGroup.Add(1)
 
-	// タイマーラインを取得し、表示マネージャーがKanaかRomajiかを判別する
 	var timerLine *display.TerminalLine
 	switch dm := g.DisplayManager.(type) {
 	case *RomajiDisplayManager:
-		timerLine = dm.StatsLine
+		timerLine = dm.TimerLine
 	case *KanaDisplayManager:
-		timerLine = dm.StatsLine
+		timerLine = dm.TimerLine
 	default:
 		timerLine = nil
 	}
@@ -101,27 +109,36 @@ func (g *Play) handleUserInput(onExit func()) string {
 			return ""
 		}
 
-		correct := g.Judge.IsCorrect(g.CurrentInput+string(char), g.CurrentTarget.Text, len(g.CurrentInput))
-		g.Stats.Update(correct)
-		g.CurrentTarget.UpdateStats(correct)
-
 		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget.Text)
 
-		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.CurrentInput)
+		if g.Judge.IsCorrect(g.CurrentInput, g.CurrentTarget.RomajiPatterns, len(g.CurrentInput)-1) {
+			g.Stats.Update(true)
+			g.CurrentTarget.UpdateStats(true)
 
-		if len(g.CurrentInput) <= len(g.CurrentTarget.Text) && !correct {
+			if g.Judge.ShouldGoNext() {
+				g.CurrentIndex++
+				if g.CurrentIndex < len(g.Sentences) {
+					g.CurrentTarget = g.Sentences[g.CurrentIndex]
+					g.CurrentInput = ""
+					g.Stats.ResetInterval()
+					g.Judge = NewJudge(config.Config.InputMode, g.CurrentTarget.RomajiPatterns)
+					g.DisplayManager.Initialize()
+					g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
+					g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
+					g.updateStats()
+					continue
+				} else {
+					return g.CurrentInput
+				}
+			}
+		} else {
+			g.Stats.Update(false)
+			g.CurrentTarget.UpdateStats(false)
+			fmt.Println("MISS!")
 			g.DisplayManager.ShowMissMessage()
-			g.CurrentInput = g.CurrentInput[:len(g.CurrentInput)-1]
-			g.updateStats()
-			continue
 		}
 
-		g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
-		g.updateStats()
-
-		if g.CurrentInput == g.CurrentTarget.Text {
-			return g.CurrentInput
-		}
+		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
 	}
 }
 
