@@ -1,0 +1,36 @@
+
+coverage:
+  if: true
+
+codeToTestRatio:
+  code:
+    - '**/*.go'
+    - '!**/*_test.go'
+  test:
+    - '**/*_test.go'
+
+testExecutionTime:
+  if: true
+  acceptable: 1min
+
+diff:
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+
+comment:
+  if: is_pull_request
+  github:
+    token: ${{ secrets.GITHUB_TOKEN }}
+    type: pr
+  hideFooterLink: true
+  deletePrevious: true
+
+summary:
+  if: true
+  hideFooterLink: true
+
+report:
+  if: is_default_branch
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+  path: report.json
