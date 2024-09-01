@@ -23,7 +23,7 @@ jobs:
 
       - run: go test -coverprofile=coverage.out ./...
 
-      - uses: k1LoW/octocov-action@vlatest
+      - uses: k1LoW/octocov-action@latest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
