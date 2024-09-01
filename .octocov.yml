@@ -18,7 +18,7 @@ diff:
     - artifact://${GITHUB_REPOSITORY}
 
 comment:
-  if: is_pull_request
+  if: github.event_name == 'push' && github.ref_name == 'main'
   github:
     token: ${{ secrets.GITHUB_TOKEN }}
     type: pr
