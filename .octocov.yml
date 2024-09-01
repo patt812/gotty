@@ -30,7 +30,6 @@ summary:
   hideFooterLink: true
 
 report:
-  if: is_default_branch
   datastores:
     - artifact://${GITHUB_REPOSITORY}
   path: report.json
