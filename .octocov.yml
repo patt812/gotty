@@ -1,35 +1,25 @@
 coverage:
   if: true
   paths:
-    - coverage.out
-
+    - build/report/coverage.out
 codeToTestRatio:
   code:
     - '**/*.go'
     - '!**/*_test.go'
   test:
     - '**/*_test.go'
-
 testExecutionTime:
   if: true
-
+comment:
+  if: is_pull_request
+  hideFooterLink: false
+summary:
+  if: is_pull_request
+  hideFooterLink: false
 diff:
   datastores:
     - artifact://${GITHUB_REPOSITORY}
-
-comment:
-  if: github.event_name == 'push' && github.ref_name == 'main'
-  github:
-    token: ${{ secrets.GITHUB_TOKEN }}
-    type: pr
-  hideFooterLink: true
-  deletePrevious: true
-
-summary:
-  if: true
-  hideFooterLink: true
-
 report:
+  if: is_default_branch
   datastores:
     - artifact://${GITHUB_REPOSITORY}
-  path: report.json
