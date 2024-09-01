@@ -1,4 +1,7 @@
 .env
+.vscode/
+!.vscode/launch.json
+
 coverage.out
 
 config/config.json
