@@ -21,9 +21,9 @@ jobs:
 
       - run: go mod tidy
 
-      - run: go test -coverprofile=coverage.out ./...
+      - run: make test-cov
 
-      - uses: k1LoW/octocov-action@latest
+      - uses: k1LoW/octocov-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
