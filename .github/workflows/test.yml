@@ -26,13 +26,10 @@ jobs:
       - name: Run tests and generate coverage report
         run: go test -coverprofile=coverage.out ./...
 
-      - name: Install octocov
-        run: go install github.com/k1LoW/octocov@latest
-
-      - name: Generate and analyze coverage report with octocov
-        run: octocov
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run octocov
+        uses: k1LoW/octocov-action@v0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
