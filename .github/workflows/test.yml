@@ -29,6 +29,9 @@ jobs:
 
       - run: make test
 
+      - name: Install octocov
+        run: go install github.com/k1LoW/octocov@latest
+
       - name: Generate coverage report with octocov
         run: |
           go test -coverprofile=coverage.out ./...
