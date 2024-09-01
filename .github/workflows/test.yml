@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get go version
+        id: go-version
+        run: |
+          go_version=$(grep '^go ' go.mod | cut -d ' ' -f 2)
+          echo "go-version=$go_version" >> $GITHUB_ENV
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.go-version }}
+
+      - run: go mod tidy
+
+      - run: make test
