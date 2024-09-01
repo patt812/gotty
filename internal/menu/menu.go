@@ -54,14 +54,9 @@ func ShowMainMenu() {
 		}
 
 		sentences := typing.GetSentences()
-		for i, sentence := range sentences {
-			sentences[i].RomajiPatterns = convertPatternsToSlice(config.Patterns, sentence.Text)
-		}
-
 		g := typing.Play{
 			DisplayManager: displayManager,
-			Judge:          typing.NewJudge(config.Config.InputMode, sentences[0].RomajiPatterns), // 初期化時に最初の sentence のパターンを渡す
-			Sentences:      sentences,                                                             // 変換後の sentences を渡す
+			Sentences:      sentences,
 		}
 		g.Start(ShowMainMenu)
 
@@ -75,18 +70,6 @@ func ShowMainMenu() {
 		display.ClearTerminal()
 		os.Exit(0)
 	}
-}
-
-func convertPatternsToSlice(patterns config.PatternConfig, sentence string) [][]string {
-	var result [][]string
-	for _, char := range sentence {
-		if pattern, exists := patterns[string(char)]; exists {
-			result = append(result, pattern)
-		} else {
-			result = append(result, []string{string(char)})
-		}
-	}
-	return result
 }
 
 func ShowInputModeSubMenu() {

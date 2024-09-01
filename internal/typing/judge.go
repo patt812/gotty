@@ -1,12 +1,12 @@
 package typing
 
 type Judge interface {
-	IsCorrect(userInput string, romajiPatterns [][]string, index int) bool
+	IsCorrect(userInput string) bool
+	IsNext() bool
 	IsExit(char rune) bool
-	ProcessInput(char rune, currentInput string, targetText string) string
-	GetPatternIndex() int
-	GetCharIndex() int
-	ShouldGoNext() bool
+	ShiftPosition()
+	ProcessInput(char rune) string
+	ToString() (string, string)
 }
 
 type RomajiJudge struct {
@@ -21,8 +21,7 @@ func NewRomajiJudge(expectedInput string) *RomajiJudge {
 	}
 }
 
-func (j *RomajiJudge) IsCorrect(userInput string, _ [][]string, _ int) bool {
-
+func (j *RomajiJudge) IsCorrect(userInput string) bool {
 	if len(j.CurrentInput) > len(j.ExpectedInput) || j.ExpectedInput[:len(j.CurrentInput)] != j.CurrentInput {
 		return false
 	}
@@ -34,118 +33,103 @@ func (j *RomajiJudge) IsCorrect(userInput string, _ [][]string, _ int) bool {
 	return false
 }
 
+func (j *RomajiJudge) IsNext() bool {
+	return j.CurrentInput == ""
+}
+
 func (j *RomajiJudge) IsExit(char rune) bool {
 	return char == 27
 }
 
-func (j *RomajiJudge) ProcessInput(char rune, currentInput string, targetText string) string {
-	if char == 127 {
-		if len(j.CurrentInput) > 0 {
-			j.CurrentInput = j.CurrentInput[:len(j.CurrentInput)-1]
-		}
-		return j.CurrentInput
-	} else if len(j.CurrentInput) < len(targetText) {
-		j.CurrentInput += string(char)
-	}
-	return j.CurrentInput
+func (j *RomajiJudge) ProcessInput(char rune) string {
+	return string(char)
 }
 
-func (j *RomajiJudge) GetPatternIndex() int {
-	return len(j.CurrentInput)
+func (j *RomajiJudge) ShiftPosition() {
+	j.CurrentInput = j.CurrentInput[1:]
 }
 
-func (j *RomajiJudge) GetCharIndex() int {
-	return len(j.CurrentInput)
-}
-
-func (j *RomajiJudge) ShouldGoNext() bool {
-	return j.CurrentInput == j.ExpectedInput
+func (j *RomajiJudge) ToString() (string, string) {
+	return j.CurrentInput, j.ExpectedInput
 }
 
 type KanaJudge struct {
-	PatternIndex    int
-	CharIndex       int
-	CorrectPatterns []string
-	Patterns        [][]string
-	GoNext          bool
+	KanaIndex int
+	RomaIndex int
+	Patterns  [][]string
 }
 
 func NewKanaJudge(patterns [][]string) *KanaJudge {
 	return &KanaJudge{
-		PatternIndex:    0,
-		CharIndex:       0,
-		CorrectPatterns: nil,
-		Patterns:        patterns,
-		GoNext:          false,
+		KanaIndex: 0,
+		RomaIndex: 0,
+		Patterns:  patterns,
 	}
 }
 
-func (j *KanaJudge) IsCorrect(userInput string, romajiPatterns [][]string, index int) bool {
-
-	if index >= len(userInput) || j.PatternIndex >= len(romajiPatterns) {
-		return false
-	}
-
-	candidates := romajiPatterns[j.PatternIndex]
-	newCorrectPatterns := []string{}
+func (j *KanaJudge) IsCorrect(userInput string) bool {
+	candidates := j.Patterns[j.KanaIndex]
+	correctPatterns := []string{}
 
 	for _, pattern := range candidates {
-		if len(pattern) > j.CharIndex && pattern[j.CharIndex] == userInput[index] {
-			newCorrectPatterns = append(newCorrectPatterns, pattern)
+		if len(pattern) > j.RomaIndex && string(pattern[j.RomaIndex]) == userInput {
+			correctPatterns = append(correctPatterns, pattern)
 		}
 	}
 
-	if len(newCorrectPatterns) == 0 {
-		return false
+	if len(correctPatterns) > 0 {
+		j.Patterns[j.KanaIndex] = correctPatterns
+		return true
 	}
+	return false
+}
 
-	j.CorrectPatterns = newCorrectPatterns
-
-	if len(j.CorrectPatterns[0]) == j.CharIndex+1 {
-		j.PatternIndex++
-		j.CharIndex = 0
-		j.CorrectPatterns = nil
-		if j.PatternIndex >= len(romajiPatterns) {
-			j.GoNext = true
+func (j *KanaJudge) ShiftPosition() {
+	for _, pattern := range j.Patterns[j.KanaIndex] {
+		if len(pattern) == j.RomaIndex+1 {
+			j.RomaIndex = 0
+			j.KanaIndex++
+			return
 		}
-	} else {
-		j.CharIndex++
-		j.GoNext = false
 	}
+	j.RomaIndex++
+}
 
-	return true
+func (j *KanaJudge) IsNext() bool {
+	if j.KanaIndex >= len(j.Patterns) {
+		j.RomaIndex = 0
+		j.KanaIndex++
+		return true
+	}
+	return false
 }
 
 func (j *KanaJudge) IsExit(char rune) bool {
 	return char == 27
 }
 
-func (j *KanaJudge) ProcessInput(char rune, currentInput string, targetText string) string {
-	if char == 127 {
-		if len(currentInput) > 0 {
-			currentInput = currentInput[:len(currentInput)-1]
-			j.CharIndex = max(0, j.CharIndex-1)
-		}
-		return currentInput
+func (j *KanaJudge) ProcessInput(char rune) string {
+	return string(char)
+}
+
+func (j *KanaJudge) ToString() (string, string) {
+	var correctColored, remainingColored string
+
+	for i := 0; i < j.KanaIndex; i++ {
+		correctColored += j.Patterns[i][0]
 	}
 
-	if len(currentInput) < len(targetText) {
-		currentInput += string(char)
+	if j.KanaIndex < len(j.Patterns) {
+		currentPattern := j.Patterns[j.KanaIndex][0]
+		correctColored += currentPattern[:j.RomaIndex]
+		remainingColored += currentPattern[j.RomaIndex:]
 	}
 
-	return currentInput
-}
+	for i := j.KanaIndex + 1; i < len(j.Patterns); i++ {
+		remainingColored += j.Patterns[i][0]
+	}
 
-func (j *KanaJudge) GetPatternIndex() int {
-	return j.PatternIndex
-}
-
-func (j *KanaJudge) GetCharIndex() int {
-	return j.CharIndex
-}
-
-func (j *KanaJudge) ShouldGoNext() bool {
-	return j.GoNext
+	return correctColored, remainingColored
 }
 
 func NewJudge(inputMode string, patterns [][]string) Judge {
@@ -153,11 +137,4 @@ func NewJudge(inputMode string, patterns [][]string) Judge {
 		return NewKanaJudge(patterns)
 	}
 	return NewRomajiJudge("")
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
