@@ -47,10 +47,12 @@ func (s *Sentence) WPM() string {
 
 func GetSentences() []Sentence {
 	totalSentences := config.Config.NumberOfSentences
+	indices := rand.Perm(len(config.Sentences))
+
 	selectedSentences := make([]Sentence, totalSentences)
 
 	for i := 0; i < totalSentences; i++ {
-		randomIndex := rand.Intn(len(config.Sentences))
+		randomIndex := indices[i]
 		text := config.Sentences[randomIndex]
 		selectedSentences[i] = Sentence{
 			Text:           text,
