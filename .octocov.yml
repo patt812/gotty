@@ -1,7 +1,3 @@
-
-coverage:
-  if: true
-
 codeToTestRatio:
   code:
     - '**/*.go'
