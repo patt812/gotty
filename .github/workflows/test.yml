@@ -15,24 +15,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go environment
-        uses: actions/setup-go@v4
+      - uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
 
-      - name: Install dependencies
-        run: go mod tidy
+      - run: go mod tidy
 
-      - name: Run tests and generate coverage report
-        run: go test -coverprofile=coverage.out ./...
+      - run: go test -coverprofile=coverage.out ./...
 
-      - name: Run octocov
-        uses: k1LoW/octocov-action@v0
+      - uses: k1LoW/octocov-action@vlatest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
           name: coverage-report
           path: report.json
