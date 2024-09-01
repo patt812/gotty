@@ -28,3 +28,16 @@ jobs:
       - run: go mod tidy
 
       - run: make test
+
+      - name: Generate coverage report with octocov
+        run: |
+          go test -coverprofile=coverage.out ./...
+          octocov
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: report.json

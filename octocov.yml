@@ -1,0 +1,6 @@
+coverage:
+  output: coverage.out
+  threshold: 80 
+
+report:
+  file: report.json
