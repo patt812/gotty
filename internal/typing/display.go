@@ -9,7 +9,7 @@ import (
 
 type DisplayManager interface {
 	Initialize()
-	UpdateDisplay(sentence Sentence, patternIndex int, charIndex int, stats *Stats)
+	UpdateDisplay(sentence string, done string, yet string, stats *Stats)
 	UpdateStats(stats *Stats)
 	ShowMissMessage()
 	ShowProgress(current, total int)
@@ -57,20 +57,20 @@ func (d *RomajiDisplayManager) Initialize() {
 	}
 }
 
-func (d *RomajiDisplayManager) UpdateDisplay(sentence Sentence, currentIndex int, charIndex int, stats *Stats) {
-	romajiDisplay := ""
-	for i, patterns := range sentence.RomajiPatterns {
-		if len(patterns) > 0 {
-			if i < currentIndex {
-				romajiDisplay += color.New(color.FgCyan).Sprint(patterns[0])
-			} else {
-				romajiDisplay += patterns[0]
-			}
-		}
-	}
-	d.TextLine.SetText(sentence.Text)
-	d.RomajiLine.SetText(romajiDisplay)
-	d.UpdateStats(stats)
+func (d *RomajiDisplayManager) UpdateDisplay(sentence string, done string, yet string, stats *Stats) {
+	// romajiDisplay := ""
+	// for i, patterns := range sentence.RomajiPatterns {
+	// 	if len(patterns) > 0 {
+	// 		if i < currentIndex {
+	// 			romajiDisplay += color.New(color.FgCyan).Sprint(patterns[0])
+	// 		} else {
+	// 			romajiDisplay += patterns[0]
+	// 		}
+	// 	}
+	// }
+	// d.TextLine.SetText(sentence.Text)
+	// d.RomajiLine.SetText(romajiDisplay)
+	// d.UpdateStats(stats)
 }
 
 func (d *RomajiDisplayManager) UpdateStats(stats *Stats) {
@@ -128,26 +128,9 @@ func (d *KanaDisplayManager) Initialize() {
 	}
 }
 
-func (d *KanaDisplayManager) UpdateDisplay(sentence Sentence, patternIndex int, charIndex int, stats *Stats) {
-	romajiDisplay := ""
-	correctColored := ""
-
-	for i, patterns := range sentence.RomajiPatterns {
-		if len(patterns) > 0 {
-			if i < patternIndex {
-				correctColored += color.New(color.FgCyan).Sprint(patterns[0])
-			} else if i == patternIndex {
-				correctColored += color.New(color.FgCyan).Sprint(patterns[0][:charIndex])
-				correctColored += color.New(color.FgWhite).Sprint(patterns[0][charIndex:])
-			} else {
-				correctColored += color.New(color.FgWhite).Sprint(patterns[0])
-			}
-			romajiDisplay += patterns[0]
-		}
-	}
-
-	d.TextLine.SetText(sentence.Text)
-	d.RomajiLine.SetText(correctColored)
+func (d *KanaDisplayManager) UpdateDisplay(sentence string, done string, yet string, stats *Stats) {
+	d.TextLine.SetText(sentence)
+	d.RomajiLine.SetText(color.New(color.FgCyan).Sprint(done) + yet)
 	d.UpdateStats(stats)
 }
 

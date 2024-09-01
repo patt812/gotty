@@ -21,7 +21,7 @@ type Play struct {
 	Stats          *Stats
 	WaitGroup      *sync.WaitGroup
 	Sentences      []Sentence
-	CurrentIndex   int
+	SentenceIndex  int
 	CurrentInput   string
 	CurrentTarget  Sentence
 	Results        Result
@@ -33,10 +33,12 @@ func (g *Play) Start(onExit func()) {
 
 	g.initGame()
 
-	for g.CurrentIndex < len(g.Sentences) {
-		g.CurrentTarget = g.Sentences[g.CurrentIndex]
+	for g.SentenceIndex < len(g.Sentences) {
+		g.CurrentTarget = g.Sentences[g.SentenceIndex]
+		g.Judge = NewJudge(config.Config.InputMode, g.Sentences[g.SentenceIndex].RomajiPatterns)
 		g.Stats.ResetInterval()
-		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
+		done, yet := g.Judge.ToString()
+		g.DisplayManager.UpdateDisplay(g.CurrentTarget.Text, done, yet, g.Stats)
 
 		userInput := g.handleUserInput(onExit)
 		if userInput == "" {
@@ -44,14 +46,14 @@ func (g *Play) Start(onExit func()) {
 		}
 
 		g.CurrentInput = ""
-		g.CurrentIndex++
+		g.SentenceIndex++
 
-		if g.CurrentIndex < len(g.Sentences) {
-			g.CurrentTarget = g.Sentences[g.CurrentIndex]
+		if g.SentenceIndex < len(g.Sentences) {
+			g.CurrentTarget = g.Sentences[g.SentenceIndex]
 			g.Judge = NewJudge(config.Config.InputMode, g.CurrentTarget.RomajiPatterns)
 			g.DisplayManager.Initialize()
-			g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
-			g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
+			g.DisplayManager.UpdateDisplay(g.CurrentTarget.Text, yet, done, g.Stats)
+			g.DisplayManager.ShowProgress(g.SentenceIndex+1, len(g.Sentences))
 			g.updateStats()
 		}
 	}
@@ -89,7 +91,6 @@ func (g *Play) initGame() {
 	}()
 
 	g.Sentences = GetSentences()
-	g.CurrentIndex = 0
 	g.CurrentInput = ""
 
 	g.DisplayManager.Initialize()
@@ -101,7 +102,7 @@ func (g *Play) initGame() {
 }
 
 func (g *Play) handleUserInput(onExit func()) string {
-	g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
+	g.DisplayManager.ShowProgress(g.SentenceIndex+1, len(g.Sentences))
 
 	for {
 		char, _, err := g.Reader.ReadRune()
@@ -118,42 +119,44 @@ func (g *Play) handleUserInput(onExit func()) string {
 			return ""
 		}
 
-		g.CurrentInput = g.Judge.ProcessInput(char, g.CurrentInput, g.CurrentTarget.Text)
-
-		if g.Judge.IsCorrect(g.CurrentInput, g.CurrentTarget.RomajiPatterns, len(g.CurrentInput)-1) {
-			g.Stats.Update(true)
-			g.CurrentTarget.UpdateStats(true)
-
-			if g.Judge.ShouldGoNext() {
-				g.Results.Sentences = append(g.Results.Sentences, SentenceResult{
-					Text:     g.CurrentTarget.Text,
-					Accuracy: g.Stats.GetAccuracy(),
-					WPM:      g.Stats.GetCurrentWPM(),
-				})
-
-				g.CurrentIndex++
-				if g.CurrentIndex < len(g.Sentences) {
-					g.CurrentTarget = g.Sentences[g.CurrentIndex]
-					g.CurrentInput = ""
-					g.Stats.ResetInterval()
-					g.Judge = NewJudge(config.Config.InputMode, g.CurrentTarget.RomajiPatterns)
-					g.DisplayManager.Initialize()
-					g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
-					g.DisplayManager.ShowProgress(g.CurrentIndex+1, len(g.Sentences))
-					g.updateStats()
-					continue
-				} else {
-					return g.CurrentInput
-				}
-			}
+		g.CurrentInput = g.Judge.ProcessInput(char)
+		correct := g.Judge.IsCorrect(g.CurrentInput)
+		if correct {
+			g.Judge.ShiftPosition()
 		} else {
-			g.Stats.Update(false)
-			g.CurrentTarget.UpdateStats(false)
-			fmt.Println("MISS!")
 			g.DisplayManager.ShowMissMessage()
 		}
 
-		g.DisplayManager.UpdateDisplay(g.CurrentTarget, g.Judge.GetPatternIndex(), g.Judge.GetCharIndex(), g.Stats)
+		g.Stats.Update(correct)
+		g.CurrentTarget.UpdateStats(correct)
+
+		if g.Judge.IsNext() {
+			g.Results.Sentences = append(g.Results.Sentences, SentenceResult{
+				Text:     g.CurrentTarget.Text,
+				Accuracy: g.Stats.GetAccuracy(),
+				WPM:      g.Stats.GetCurrentWPM(),
+			})
+
+			g.SentenceIndex++
+			if g.SentenceIndex < len(g.Sentences) {
+				g.CurrentTarget = g.Sentences[g.SentenceIndex]
+				g.CurrentInput = ""
+				g.Stats.ResetInterval()
+				g.Judge = NewJudge(config.Config.InputMode, g.CurrentTarget.RomajiPatterns)
+				g.DisplayManager.Initialize()
+
+				done, yet := g.Judge.ToString()
+				g.DisplayManager.UpdateDisplay(g.CurrentTarget.Text, done, yet, g.Stats)
+				g.DisplayManager.ShowProgress(g.SentenceIndex+1, len(g.Sentences))
+				g.updateStats()
+				continue
+			} else if g.SentenceIndex == len(g.Sentences) {
+				return g.CurrentInput
+			}
+		}
+
+		done, yet := g.Judge.ToString()
+		g.DisplayManager.UpdateDisplay(g.CurrentTarget.Text, done, yet, g.Stats)
 	}
 }
 
