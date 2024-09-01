@@ -1,3 +1,8 @@
+coverage:
+  if: true
+  paths:
+    - coverage.out
+
 codeToTestRatio:
   code:
     - '**/*.go'
@@ -7,7 +12,6 @@ codeToTestRatio:
 
 testExecutionTime:
   if: true
-  acceptable: 1min
 
 diff:
   datastores:
