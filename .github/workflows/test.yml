@@ -15,7 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - id: go-version
+      - name: Get go version
+        id: go-version
         run: |
           go_version=$(grep '^go ' go.mod | cut -d ' ' -f 2)
           echo "go-version=$go_version" >> $GITHUB_ENV
