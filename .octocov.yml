@@ -20,6 +20,6 @@ diff:
   datastores:
     - artifact://${GITHUB_REPOSITORY}
 report:
-  if: is_default_branch
+  if: true
   datastores:
     - artifact://${GITHUB_REPOSITORY}
