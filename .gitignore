@@ -1,4 +1,6 @@
 .env
+coverage.out
+
 config/config.json
 config/sentences.json
 config/patterns.json

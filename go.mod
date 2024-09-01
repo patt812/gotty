@@ -6,7 +6,6 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/manifoldco/promptui v0.9.0
 	golang.org/x/term v0.23.0
-	golang.org/x/text v0.17.0
 )
 
 require (

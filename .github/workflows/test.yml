@@ -15,16 +15,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get go version
-        id: go-version
-        run: |
-          go_version=$(grep '^go ' go.mod | cut -d ' ' -f 2)
-          echo "go-version=$go_version" >> $GITHUB_ENV
-
       - uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: go.mod
 
       - run: go mod tidy
 
-      - run: make test
+      - run: make test-cov
+
+      - uses: k1LoW/octocov-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: report.json
