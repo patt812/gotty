@@ -1,11 +1,20 @@
 coverage:
-  paths:
-    - coverage.out
-  acceptable: 80%
-  badge:
-    path: coverage.svg
+  output: coverage.out
+  threshold: 80
+
+report:
+  path: report.json
+
+diff:
+  path: previous_report.json
 
 comment:
   github:
+    token: ${{ secrets.GITHUB_TOKEN }}
     type: pr
-  hideFooterLink: false
+
+summary:
+  if: is_pull_request
+
+body:
+  if: is_pull_request
