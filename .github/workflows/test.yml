@@ -15,27 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get go version
-        id: go-version
-        run: |
-          go_version=$(grep '^go ' go.mod | cut -d ' ' -f 2)
-          echo "go-version=$go_version" >> $GITHUB_ENV
-
-      - uses: actions/setup-go@v4
+      - name: Set up Go environment
+        uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: go.mod  # go.modからGoのバージョンを自動取得
 
-      - run: go mod tidy
+      - name: Install dependencies
+        run: go mod tidy
 
-      - run: make test
+      - name: Run tests and generate coverage report
+        run: go test -coverprofile=coverage.out ./...
 
       - name: Install octocov
         run: go install github.com/k1LoW/octocov@latest
 
-      - name: Generate coverage report with octocov
-        run: |
-          go test -coverprofile=coverage.out ./...
-          octocov
+      - name: Generate and analyze coverage report with octocov
+        run: octocov
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
