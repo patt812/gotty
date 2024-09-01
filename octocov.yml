@@ -8,4 +8,4 @@ report:
 comment:
   github:
     token: ${{ secrets.GITHUB_TOKEN }}
-    type: commit
+    type: pr
