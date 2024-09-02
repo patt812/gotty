@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gotty/config"
 	"gotty/pkg/display"
+	"math/rand"
 	"os"
 	"os/signal"
 	"sync"
@@ -90,7 +91,8 @@ func (g *Play) initGame() {
 		g.Stats.StartTimer(timerLine)
 	}()
 
-	g.Sentences = GetSentences()
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	g.Sentences = GetSentences(GenerateRomajiPatterns, rng)
 	g.CurrentInput = ""
 
 	g.DisplayManager.Initialize()

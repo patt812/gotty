@@ -45,9 +45,9 @@ func (s *Sentence) WPM() string {
 	return "0.00"
 }
 
-func GetSentences() []Sentence {
+func GetSentences(generatePatterns func(string) [][]string, rng *rand.Rand) []Sentence {
 	totalSentences := config.Config.NumberOfSentences
-	indices := rand.Perm(len(config.Sentences))
+	indices := rng.Perm(len(config.Sentences))
 
 	selectedSentences := make([]Sentence, totalSentences)
 
@@ -56,7 +56,7 @@ func GetSentences() []Sentence {
 		text := config.Sentences[randomIndex]
 		selectedSentences[i] = Sentence{
 			Text:           text,
-			RomajiPatterns: GenerateRomajiPatterns(text),
+			RomajiPatterns: generatePatterns(text),
 		}
 	}
 
