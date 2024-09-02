@@ -53,10 +53,8 @@ func ShowMainMenu() {
 			displayManager = typing.NewRomajiDisplayManager()
 		}
 
-		sentences := typing.GetSentences()
 		g := typing.Play{
 			DisplayManager: displayManager,
-			Sentences:      sentences,
 		}
 		g.Start(ShowMainMenu)
 
