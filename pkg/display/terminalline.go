@@ -60,25 +60,7 @@ func (tl *TerminalLine) moveToLine() {
 	fmt.Printf("\033[%d;0H", tl.LineNumber)
 }
 
-func (tl *TerminalLine) UpdateDisplay(target, userInput string) {
-	tl.moveToLine()
-	fmt.Print("\r\033[K")
-
-	for i, c := range target {
-		if i < len(userInput) {
-			if c == rune(userInput[i]) {
-				color.New(color.FgCyan).Print(string(c))
-			} else {
-				color.New(color.FgRed).Print(string(c))
-			}
-		} else {
-			fmt.Print(string(c))
-		}
-	}
-	fmt.Print("\033[K")
-}
-
-func ShowProgressBar(current, total int, progressLine *TerminalLine) {
+func ShowProgressBar(current int, total int, progressLine *TerminalLine) {
 	progress := int(float64(current) / float64(total) * 20)
 	bar := fmt.Sprintf("[%s>%s]",
 		string(repeatRune('=', progress)),
