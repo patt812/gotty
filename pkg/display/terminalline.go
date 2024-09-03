@@ -1,6 +1,7 @@
 package display
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 	"time"
@@ -32,13 +33,22 @@ func (tl *TerminalLine) Clear() {
 	fmt.Print("\r\033[K")
 }
 
+func PaintText(colorAttribute color.Attribute, text string) string {
+	var buf bytes.Buffer
+	c := color.New(colorAttribute)
+	c.Fprintf(&buf, text)
+	return buf.String()
+}
+
 func (tl *TerminalLine) ShowMissMessage() {
 	tl.mu.Lock()
 	defer tl.mu.Unlock()
 	tl.moveToLine()
-	red := color.New(color.FgRed)
+
+	redText := PaintText(color.FgRed, "MISS!")
+
 	fmt.Print("\r\033[K")
-	red.Print("MISS!")
+	fmt.Print(redText)
 
 	go func() {
 		time.Sleep(1 * time.Second)
