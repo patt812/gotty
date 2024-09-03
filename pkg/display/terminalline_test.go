@@ -60,7 +60,7 @@ func TestShowMissMessage(t *testing.T) {
 		sut.ShowMissMessage()
 	}()
 
-	wg.Wait() // ゴルーチンが完了するまで待機
+	wg.Wait()
 
 	got := rec.ToArray()
 	want := []string{"MISS!"}
