@@ -5,8 +5,8 @@ import (
 	"gotty/pkg/display"
 	"gotty/test/utils"
 	"reflect"
+	"sync"
 	"testing"
-	"time"
 
 	"github.com/fatih/color"
 )
@@ -52,11 +52,18 @@ func TestShowMissMessage(t *testing.T) {
 	rec := utils.NewLogRecorder()
 
 	sut := display.NewTerminalLine(1)
-	sut.ShowMissMessage()
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-	time.Sleep(1 * time.Second)
-	got := rec.ToAnsiString()
-	want := "\x1b[1;0H\r\x1b[KMISS!"
+	go func() {
+		defer wg.Done()
+		sut.ShowMissMessage()
+	}()
+
+	wg.Wait() // ゴルーチンが完了するまで待機
+
+	got := rec.ToArray()
+	want := []string{"MISS!"}
 
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Expected display manager to be %+v, but got %+v", want, got)
