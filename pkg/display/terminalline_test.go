@@ -47,28 +47,6 @@ func TestPaintText(t *testing.T) {
 	}
 }
 
-// func TestShowMissMessage(t *testing.T) {
-// 	rec := utils.NewLogRecorder()
-
-// 	sut := display.NewTerminalLine(1)
-// 	var wg sync.WaitGroup
-// 	wg.Add(1)
-
-// 	go func() {
-// 		defer wg.Done()
-// 		sut.ShowMissMessage()
-// 	}()
-
-// 	wg.Wait()
-
-// 	got := rec.ToArray()
-// 	want := []string{"MISS!"}
-
-// 	if !reflect.DeepEqual(got, want) {
-// 		t.Errorf("Expected display manager to be %+v, but got %+v", want, got)
-// 	}
-// }
-
 func TestShowProgressBar(t *testing.T) {
 	type testCase struct {
 		current int
