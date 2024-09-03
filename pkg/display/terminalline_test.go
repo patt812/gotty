@@ -6,6 +6,8 @@ import (
 	"gotty/test/utils"
 	"reflect"
 	"testing"
+
+	"github.com/fatih/color"
 )
 
 func TestSetText(t *testing.T) {
@@ -36,14 +38,14 @@ func TestClear(t *testing.T) {
 	}
 }
 
-// func TestPaintText(t *testing.T) {
-// 	got := display.PaintText(color.FgRed, "Foo")
-// 	want := "Foo"
+func TestPaintText(t *testing.T) {
+	got := display.PaintText(color.FgRed, "Foo")
+	want := "Foo"
 
-// 	if !reflect.DeepEqual(got, want) {
-// 		t.Errorf("Expected display manager to be %+v, but got %+v", want, got)
-// 	}
-// }
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Expected display manager to be %+v, but got %+v", want, got)
+	}
+}
 
 // func TestShowMissMessage(t *testing.T) {
 // 	rec := utils.NewLogRecorder()
