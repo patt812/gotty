@@ -48,10 +48,23 @@ func (lr *LogRecorder) stop() {
 
 func (lr *LogRecorder) ToString() string {
 	lr.stop()
+	output := lr.buffer.String()
+	return RemoveANSISequences(output)
+}
+
+func (lr *LogRecorder) ToAnsiString() string {
+	lr.stop()
 	return lr.buffer.String()
 }
 
 func (lr *LogRecorder) ToArray() []string {
+	lr.stop()
+	output := RemoveANSISequences(lr.buffer.String())
+	return strings.FieldsFunc(output, func(r rune) bool {
+		return r == '\n' || r == '\r'
+	})
+}
+func (lr *LogRecorder) ToAnsiArray() []string {
 	lr.stop()
 	output := lr.buffer.String()
 	return strings.Split(strings.TrimSuffix(output, "\n"), "\n")
